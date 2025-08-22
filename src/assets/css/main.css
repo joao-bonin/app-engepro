@@ -1,0 +1,130 @@
+/* Variáveis CSS */
+:root {
+    --sidebar-width: 280px;
+    --topbar-height: 60px;
+    --primary-color: #2c3e50; /* Azul Escuro */
+    --secondary-color: #34495e; /* Azul Mais Escuro */
+    --accent-color: #3498db; /* Azul Claro */
+    --light-bg: #f8f9fa;
+    --kanban-column-bg: #e9ecef;
+}
+
+/* Estilos base */
+body {
+    overflow-x: hidden;
+    background-color: #f5f5f5;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Estilos de página */
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.card-custom {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+}
+
+.card-header-custom {
+    background-color: var(--light-bg);
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+    color: var(--primary-color);
+    padding: 0.75rem 1.25rem;
+}
+
+/* Botões customizados */
+.btn-primary-custom {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.btn-primary-custom:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+}
+
+/* Offcanvas customizado */
+.offcanvas-custom {
+    border-left: 1px solid #dee2e6;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* Badges customizados */
+.badge-admin {
+    background-color: #dc3545;
+    color: white;
+}
+
+.badge-user {
+    background-color: #28a745;
+    color: white;
+}
+
+/* Seções de permissão */
+.permission-section {
+    background-color: var(--light-bg);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.permission-title {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 0.75rem;
+}
+
+/* Cards de estatísticas */
+.stat-card {
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Container de gráficos */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+/* Filtros de relatório */
+.report-filters {
+    background-color: var(--light-bg);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+

@@ -1,0 +1,386 @@
+<template>
+  <div class="funis-etapas-page">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="page-title mb-0">Gestão de Funis e Etapas</h2>
+      <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#novoFunilModal">
+        <i class="bi bi-plus-circle me-2"></i>Novo Funil
+      </button>
+    </div>
+
+    <div class="accordion" id="accordionFunis">
+      <div v-for="funil in funis" :key="funil.id" class="accordion-item card-custom">
+        <h2 class="accordion-header" :id="`headingFunil${funil.id}`">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse"
+            :data-bs-target="`#collapseFunil${funil.id}`" aria-expanded="true"
+            :aria-controls="`collapseFunil${funil.id}`">
+            {{ funil.name }}
+            <span v-if="funil.etapas" class="badge bg-secondary ms-2">{{ funil.etapas.length }} Etapas</span>
+          </button>
+        </h2>
+        <div :id="`collapseFunil${funil.id}`" class="accordion-collapse collapse" :class="{ show: funil.id === 1 }"
+          :aria-labelledby="`headingFunil${funil.id}`" data-bs-parent="#accordionFunis">
+          <div class="accordion-body">
+            <div class="d-flex justify-content-end mb-2">
+              <button class="btn btn-sm btn-outline-primary me-2" @click="editFunil(funil)">
+                <i class="bi bi-pencil me-1"></i>Editar Funil
+              </button>
+              <button class="btn btn-sm btn-outline-danger me-2" @click="deleteFunil(funil.id)">
+                <i class="bi bi-trash me-1"></i>Excluir Funil
+              </button>
+              <button class="btn btn-sm btn-primary-custom" @click="addEtapa(funil.id)">
+                <i class="bi bi-plus-circle me-1"></i>Nova Etapa
+              </button>
+            </div>
+
+            <ul class="list-group">
+              <li v-for="etapa in funil.etapas" :key="etapa.id"
+                class="list-group-item d-flex justify-content-between align-items-center">
+                {{ etapa.name }}
+                <span class="badge bg-primary-custom rounded-pill">{{ etapa.order }}</span>
+                <div>
+                  <button class="btn btn-sm btn-warning me-1" @click="editEtapa(etapa)">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button class="btn btn-sm btn-danger" @click="deleteEtapa(etapa.id)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Novo/Editar Funil -->
+    <div class="modal fade" id="novoFunilModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              {{ editingFunil ? 'Editar Funil' : 'Novo Funil' }}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="saveFunil">
+              <div class="mb-3">
+                <label class="form-label">Nome:</label>
+                <input type="text" class="form-control" v-model="funilForm.name" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Descrição:</label>
+                <textarea rows="3" class="form-control" v-model="funilForm.description"></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              Cancelar
+            </button>
+            <button type="button" class="btn btn-primary-custom" @click="saveFunil">
+              Salvar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Nova/Editar Etapa -->
+    <div class="modal fade" id="novaEtapaModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              {{ editingEtapa ? 'Editar Etapa' : 'Nova Etapa' }}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="saveEtapa">
+              <div class="mb-3">
+                <label class="form-label">Nome:</label>
+                <input type="text" class="form-control" v-model="etapaForm.name" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Ordem:</label>
+                <input type="number" class="form-control" v-model="etapaForm.order" min="1" required>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              Cancelar
+            </button>
+            <button type="button" class="btn btn-primary-custom" @click="saveEtapa">
+              Salvar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { ref, reactive, onMounted } from 'vue'
+import { Modal } from 'bootstrap'
+
+
+export default {
+  name: 'FunisEtapas',
+  setup() {
+    const funis = ref([]);
+    const editingFunil = ref(null)
+    const selectedFunilId = ref(null)
+
+    const funilForm = reactive({
+      name: '',
+      description: ''
+    })
+
+    const resetFunilForm = () => {
+      funilForm.name = ''
+      funilForm.description = ''
+      editingFunil.value = null
+    }
+
+    const loadFunis = async () => {
+      try {
+        const response = await fetch('http://localhost:9000/funnel', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json;charset=UTF-8'
+          }
+        });
+
+        if (!response.ok) throw new Error('Erro ao buscar os funis');
+
+        const data = await response.json();
+        funis.value = data;
+        console.log('Funis carregados:', data);
+      } catch (error) {
+        console.error('Erro ao carregar funis:', error);
+      }
+    };
+
+    onMounted(() => {
+      loadFunis();
+    });
+
+
+    const editFunil = (funil) => {
+      editingFunil.value = funil
+
+      funilForm.name = funil.name
+      funilForm.description = funil.description
+
+      // Abrir modal
+      const modal = Modal.getOrCreateInstance(document.getElementById('novoFunilModal'))
+      modal.show()
+    }
+
+    const deleteFunil = (funilId) => {
+      if (confirm('Tem certeza que deseja excluir este funil?')) {
+        const index = funis.value.findIndex(f => f.id === funilId)
+        if (index !== -1) {
+          funis.value.splice(index, 1)
+          try {
+            fetch('http://localhost:9000/funnel/' + funilId, {
+              method: 'DELETE',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json;charset=UTF-8'
+              }
+            });
+          } catch (error) {
+            console.error('Ocorreu um erro ao deletar o funil', error);
+          }
+        }
+      }
+    }
+
+    const saveFunil = async () => {
+      if (editingFunil.value) {
+
+        const editedFunnel = {
+          name: funilForm.name,
+          description: funilForm.description,
+          etapas: editingFunil.value.etapas || []
+        }
+
+        try {
+          const response = await fetch('http://localhost:9000/funnel/' + editingFunil.value.id, {
+            method: 'PUT',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json;charset=UTF-8'
+            },
+            body: JSON.stringify(editedFunnel)
+          })
+
+          if (!response.ok) throw new Error('Erro ao atualizar o funil')
+
+          const funnel = await response.json()
+          const index = funis.value.findIndex(f => f.id === funnel.id)
+          if (index !== -1) {
+            funis.value[index] = funnel
+          } else {
+            console.warn('Funil editado não encontrado na lista');
+          }
+
+        } catch (error) {
+          console.error('Erro ao salvar funil:', error)
+        }
+
+      } else {
+        const newFunnel = {
+          name: funilForm.name,
+          description: funilForm.description,
+          etapas: []
+        }
+
+        try {
+          const response = await fetch('http://localhost:9000/funnel', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json;charset=UTF-8'
+            },
+            body: JSON.stringify(newFunnel)
+          })
+
+          if (!response.ok) throw new Error('Erro ao criar o funil')
+
+          const createdFunil = await response.json()
+          funis.value.push(createdFunil)
+
+        } catch (error) {
+          console.error('Erro ao salvar funil:', error)
+        }
+      }
+
+      resetFunilForm()
+      const modal = Modal.getOrCreateInstance(document.getElementById('novoFunilModal'))
+      modal.hide()
+    }
+
+
+    // #### Etapas
+    const editingEtapa = ref(null)
+
+    const saveEtapa = () => {
+      if (editingEtapa.value) {
+        // Editar etapa existente
+        editingEtapa.value.name = etapaForm.name
+        editingEtapa.value.order = etapaForm.order
+      } else {
+        // Criar nova etapa
+        const funil = funis.value.find(f => f.id === selectedFunilId.value)
+        if (funil) {
+          const newEtapa = {
+            id: Date.now(),
+            name: etapaForm.name,
+            order: etapaForm.order,
+            funilId: selectedFunilId.value
+          }
+          funil.etapas.push(newEtapa)
+          funil.etapas.sort((a, b) => a.order - b.order)
+        }
+      }
+
+      resetEtapaForm()
+      // Fechar modal
+      const modal = bootstrap.Modal.getInstance(document.getElementById('novaEtapaModal'))
+      modal.hide()
+    }
+
+    const etapaForm = reactive({
+      name: '',
+      order: 1
+    })
+
+    const addEtapa = (funilId) => {
+      selectedFunilId.value = funilId
+      editingEtapa.value = null
+      etapaForm.name = ''
+      etapaForm.order = 1
+
+      // Abrir modal
+      const modal = new bootstrap.Modal(document.getElementById('novaEtapaModal'))
+      modal.show()
+    }
+
+    const editEtapa = (etapa) => {
+      editingEtapa.value = etapa
+      etapaForm.name = etapa.name
+      etapaForm.order = etapa.order
+
+      // Abrir modal
+      const modal = new bootstrap.Modal(document.getElementById('novaEtapaModal'))
+      modal.show()
+    }
+
+    const resetEtapaForm = () => {
+      etapaForm.name = ''
+      etapaForm.order = 1
+      editingEtapa.value = null
+      selectedFunilId.value = null
+    }
+
+    const deleteEtapa = (etapaId) => {
+      if (confirm('Tem certeza que deseja excluir esta etapa?')) {
+        funis.value.forEach(funil => {
+          const index = funil.etapas.findIndex(e => e.id === etapaId)
+          if (index !== -1) {
+            console.log("Excluindo etapa:", etapaId);
+            funil.etapas.splice(index, 1)
+            fetch('http://localhost:9000/step/' + etapaId, {
+              method: 'DELETE',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json;charset=UTF-8'
+              }
+            });
+          }
+        })
+      }
+    }
+
+    return {
+      funis,
+      editingFunil,
+      editingEtapa,
+      funilForm,
+      etapaForm,
+      editFunil,
+      deleteFunil,
+      addEtapa,
+      editEtapa,
+      deleteEtapa,
+      saveFunil,
+      saveEtapa
+    }
+  }
+}
+</script>
+
+<style scoped>
+.funis-etapas-page {
+  padding: 0;
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: var(--light-bg);
+  color: var(--primary-color);
+}
+
+.list-group-item {
+  border: 1px solid #dee2e6;
+}
+
+.list-group-item:hover {
+  background-color: #f8f9fa;
+}
+</style>

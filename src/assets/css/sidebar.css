@@ -1,0 +1,95 @@
+/* Estilos do Sidebar */
+#sidebar {
+    position: fixed;
+    width: var(--sidebar-width);
+    height: 100%;
+    background-color: var(--primary-color);
+    color: white;
+    transition: all 0.3s;
+    z-index: 1030; 
+}
+
+#sidebar .sidebar-header {
+    padding: 20px;
+    background-color: var(--secondary-color);
+    text-align: center;
+}
+
+#sidebar ul.components {
+    padding: 20px 0;
+}
+
+#sidebar ul li a {
+    padding: 15px 20px;
+    display: block;
+    color: white;
+    text-decoration: none;
+    transition: background-color 0.3s, border-left 0.3s;
+    font-size: 0.95rem;
+}
+
+#sidebar ul li a:hover {
+    background-color: var(--accent-color);
+}
+
+#sidebar ul li a.active {
+    background-color: var(--accent-color);
+    border-left: 5px solid white;
+    font-weight: bold;
+}
+
+#sidebar ul li a i {
+    margin-right: 12px;
+    font-size: 1.1rem;
+}
+
+/* Área de conteúdo */
+#content {
+    width: calc(100% - var(--sidebar-width));
+    margin-left: var(--sidebar-width);
+    transition: all 0.3s;
+    min-height: 100vh;
+    padding-top: var(--topbar-height);
+}
+
+/* Navbar superior */
+.navbar-custom {
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    height: var(--topbar-height);
+    position: fixed;
+    top: 0;
+    left: var(--sidebar-width);
+    right: 0;
+    z-index: 1020;
+    transition: left 0.3s;
+}
+
+/* Responsividade para dispositivos móveis */
+@media (max-width: 768px) {
+    #sidebar {
+        margin-left: -var(--sidebar-width);
+    }
+    
+    #sidebar.active {
+        margin-left: 0;
+    }
+    
+    #content {
+        width: 100%;
+        margin-left: 0;
+    }
+    
+    #content.active {
+        margin-left: var(--sidebar-width);
+    }
+    
+    .navbar-custom {
+        left: 0;
+    }
+    
+    #content.active + .navbar-custom {
+        left: var(--sidebar-width);
+    }
+}
+
