@@ -128,3 +128,58 @@ body {
     margin-bottom: 1.5rem;
 }
 
+:root {
+  --topbar-h: 56px;     /* ajuste se sua navbar for maior */
+  --sidebar-w: 280px;   /* largura do menu lateral */
+}
+
+html, body, #app {
+  height: 100%;
+}
+
+.app-layout {
+  display: grid;
+  grid-template-rows: var(--topbar-h) 1fr;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  grid-template-areas:
+    "topbar topbar"
+    "sidebar main";
+  min-height: 100vh;
+}
+
+/* Topbar fica “grudada” no topo, mas sem ser fixed */
+.app-topbar {
+  grid-area: topbar;
+  position: sticky;
+  top: 0;
+  z-index: 1030; /* similar ao padrão do Bootstrap */
+}
+
+/* Sidebar ocupa a coluna e respeita a altura da topbar */
+.app-sidebar {
+  grid-area: sidebar;
+  position: sticky;
+  top: var(--topbar-h);
+  align-self: start;
+  height: calc(100vh - var(--topbar-h));
+  overflow-y: auto;
+  border-right: 1px solid var(--bs-border-color);
+  background: var(--bs-body-bg);
+}
+
+.app-main {
+  grid-area: main;
+  overflow: auto;
+  padding: 1rem; /* ou container classes do Bootstrap */
+}
+
+/* Mobile: esconda a sidebar no layout convencional e use offcanvas quando quiser */
+@media (max-width: 991.98px) {
+  .app-layout {
+    grid-template-columns: 1fr;             /* sem coluna lateral fixa */
+    grid-template-areas:
+      "topbar"
+      "main";
+  }
+  .app-sidebar { display: none; }           /* opcional, se não usar offcanvas aqui */
+}

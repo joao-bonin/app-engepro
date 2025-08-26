@@ -1,25 +1,20 @@
-<!-- src/components/layout/Layout.vue -->
-<script setup>
-// IMPORTES QUE VALEM SÓ QUANDO O LAYOUT É USADO:
-import 'bootstrap/dist/css/bootstrap.min.css'
-import 'bootstrap/dist/js/bootstrap.bundle.min.js'
-
-import Sidebar from './Sidebar.vue'
-import Topbar from './Topbar.vue'
-</script>
-
 <template>
-  <div class="layout d-flex">
+  <div class="app-layout">
+    <Topbar />
     <Sidebar />
-    <div class="flex-grow-1">
-      <Topbar />
-      <div class="p-3">
-        <router-view />
-      </div>
-    </div>
+    <main class="app-main container-fluid">
+      <router-view />
+    </main>
   </div>
 </template>
 
-<style scoped>
-/* estilos específicos do seu layout... */
-</style>
+<script>
+import Topbar from './Topbar.vue'
+import Sidebar from './Sidebar.vue'
+
+export default {
+  components: { Topbar, Sidebar }
+}
+</script>
+
+<!-- Estilos ficam no main.css; se usar scoped aqui, não duplique as classes -->

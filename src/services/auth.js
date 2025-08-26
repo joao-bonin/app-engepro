@@ -20,10 +20,11 @@ export async function login(email, password) {
       body: JSON.stringify(credentials)
     })
 
-    if (!response.ok) throw new Error('Erro ao fazer login')
+    if (!response.ok) return false;
 
     const login = await response.json()
     localStorage.setItem('token', login.token);
+    localStorage.setItem('hasLevelConfig', login.hasLevelConfig);
     return true;
   }
   return false;
@@ -31,4 +32,5 @@ export async function login(email, password) {
 
 export function logout() {
   localStorage.removeItem('token');
+  localStorage.removeItem('hasLevelConfig');
 }

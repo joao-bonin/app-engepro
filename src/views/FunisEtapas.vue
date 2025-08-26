@@ -2,12 +2,15 @@
   <div class="funis-etapas-page">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2 class="page-title mb-0">Gestão de Funis e Etapas</h2>
-      <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#novoFunilModal">
+      <button v-if="hasLevelConfig" class="btn btn-primary d-flex align-items-center" @click="openNewFunilModal">
         <i class="bi bi-plus-circle me-2"></i>Novo Funil
       </button>
     </div>
 
     <div class="accordion" id="accordionFunis">
+      <div v-if="funis.length === 0" class="alert alert-info">
+        Nenhum funil encontrado. Clique em "Novo Funil" para criar um.
+      </div>
       <div v-for="funil in funis" :key="funil.id" class="accordion-item card-custom">
         <h2 class="accordion-header" :id="`headingFunil${funil.id}`">
           <button class="accordion-button" type="button" data-bs-toggle="collapse"
@@ -21,13 +24,13 @@
           :aria-labelledby="`headingFunil${funil.id}`" data-bs-parent="#accordionFunis">
           <div class="accordion-body">
             <div class="d-flex justify-content-end mb-2">
-              <button class="btn btn-sm btn-outline-primary me-2" @click="editFunil(funil)">
+              <button v-if="hasLevelConfig" class="btn btn-primary btn-sm me-2" @click="editFunil(funil)">
                 <i class="bi bi-pencil me-1"></i>Editar Funil
               </button>
-              <button class="btn btn-sm btn-outline-danger me-2" @click="deleteFunil(funil.id)">
+              <button v-if="hasLevelConfig" class="btn btn-sm btn-danger me-2" @click="openDeleteModal(funil)">
                 <i class="bi bi-trash me-1"></i>Excluir Funil
               </button>
-              <button class="btn btn-sm btn-primary-custom" @click="addEtapa(funil.id)">
+              <button v-if="hasLevelConfig" class="btn btn-sm btn-primary" @click="addEtapa(funil.id)">
                 <i class="bi bi-plus-circle me-1"></i>Nova Etapa
               </button>
             </div>
@@ -63,6 +66,12 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
+            <!-- Exibir erros -->
+            <div v-if="funilErrors && funilErrors.length" class="alert alert-danger">
+              <ul class="mb-0">
+                <li v-for="(err, i) in funilErrors" :key="i">{{ err }}</li>
+              </ul>
+            </div>
             <form @submit.prevent="saveFunil">
               <div class="mb-3">
                 <label class="form-label">Nome:</label>
@@ -78,7 +87,7 @@
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
               Cancelar
             </button>
-            <button type="button" class="btn btn-primary-custom" @click="saveFunil">
+            <button type="submit" class="btn btn-primary" @click="saveFunil">
               Salvar
             </button>
           </div>
@@ -103,8 +112,8 @@
                 <input type="text" class="form-control" v-model="etapaForm.name" required>
               </div>
               <div class="mb-3">
-                <label class="form-label">Ordem:</label>
-                <input type="number" class="form-control" v-model="etapaForm.order" min="1" required>
+                <label class="form-label">Descrição:</label>
+                <textarea rows="3" class="form-control" v-model="etapaForm.order"></textarea>
               </div>
             </form>
           </div>
@@ -112,9 +121,28 @@
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
               Cancelar
             </button>
-            <button type="button" class="btn btn-primary-custom" @click="saveEtapa">
+            <button type="submit" class="btn btn-primary" @click="saveEtapa">
               Salvar
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirmar Exclusão</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            Tem certeza que deseja excluir o funil <strong>{{ funilToDelete?.name }}</strong>?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-danger" @click="confirmDeleteFunil">Excluir</button>
           </div>
         </div>
       </div>
@@ -133,8 +161,11 @@ export default {
     const funis = ref([]);
     const editingFunil = ref(null)
     const selectedFunilId = ref(null)
+    const funilErrors = ref([])
+    const funilToDelete = ref(null)
 
     const token = localStorage.getItem("token");
+    const hasLevelConfig = ref(localStorage.getItem("hasLevelConfig") === "true")
 
     const funilForm = reactive({
       name: '',
@@ -145,6 +176,7 @@ export default {
       funilForm.name = ''
       funilForm.description = ''
       editingFunil.value = null
+      funilErrors.value = []
     }
 
     const loadFunis = async () => {
@@ -158,11 +190,17 @@ export default {
           }
         });
 
+        if (response.status === 422) {
+          funilErrors.value = await response.json()
+          return
+        }
+
         if (!response.ok) throw new Error('Erro ao buscar os funis');
 
         const data = await response.json();
         funis.value = data;
         console.log('Funis carregados:', data);
+
       } catch (error) {
         console.error('Erro ao carregar funis:', error);
       }
@@ -184,25 +222,45 @@ export default {
       modal.show()
     }
 
-    const deleteFunil = (funilId) => {
-      if (confirm('Tem certeza que deseja excluir este funil?')) {
-        const index = funis.value.findIndex(f => f.id === funilId)
-        if (index !== -1) {
-          funis.value.splice(index, 1)
-          try {
-            fetch('http://localhost:9000/funnel/' + funilId, {
-              method: 'DELETE',
-              headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json;charset=UTF-8',
-                'Authorization': `Bearer ${token}`
-              }
-            });
-          } catch (error) {
-            console.error('Ocorreu um erro ao deletar o funil', error);
+    const openDeleteModal = (funil) => {
+      funilToDelete.value = funil
+      const modal = Modal.getOrCreateInstance(document.getElementById('confirmDeleteModal'))
+      modal.show()
+    }
+
+    const openNewFunilModal = () => {
+      resetFunilForm()  // limpa campos e erros
+      const modal = Modal.getOrCreateInstance(document.getElementById('novoFunilModal'))
+      modal.show()
+    }
+
+    const confirmDeleteFunil = async () => {
+      if (!funilToDelete.value) return
+
+      const id = funilToDelete.value.id
+
+      // Remove da lista local
+      const index = funis.value.findIndex(f => f.id === id)
+      if (index !== -1) funis.value.splice(index, 1)
+
+      // Fecha modal
+      const modal = Modal.getOrCreateInstance(document.getElementById('confirmDeleteModal'))
+      modal.hide()
+
+      try {
+        await fetch('http://localhost:9000/funnel/' + id, {
+          method: 'DELETE',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Authorization': `Bearer ${token}`
           }
-        }
+        })
+      } catch (error) {
+        console.error('Erro ao deletar funil:', error)
       }
+
+      funilToDelete.value = null
     }
 
     const saveFunil = async () => {
@@ -235,6 +293,15 @@ export default {
             console.warn('Funil editado não encontrado na lista');
           }
 
+          const modalEl = document.getElementById('novoFunilModal')
+          const modal = Modal.getOrCreateInstance(modalEl)
+          modal.hide()
+
+          // garante que o backdrop sumiu
+          document.querySelectorAll('.modal-backdrop').forEach(el => el.remove())
+          document.body.classList.remove('modal-open')
+          document.body.style.removeProperty('overflow')
+
         } catch (error) {
           console.error('Erro ao salvar funil:', error)
         }
@@ -257,10 +324,25 @@ export default {
             body: JSON.stringify(newFunnel)
           })
 
+          if (response.status === 422) {
+            funilErrors.value = await response.json()
+            return
+          }
+
           if (!response.ok) throw new Error('Erro ao criar o funil')
 
           const createdFunil = await response.json()
           funis.value.push(createdFunil)
+
+          resetFunilForm()
+          const modalEl = document.getElementById('novoFunilModal')
+          const modal = Modal.getOrCreateInstance(modalEl)
+          modal.hide()
+
+          // garante que o backdrop sumiu
+          document.querySelectorAll('.modal-backdrop').forEach(el => el.remove())
+          document.body.classList.remove('modal-open')
+          document.body.style.removeProperty('overflow')
 
         } catch (error) {
           console.error('Erro ao salvar funil:', error)
@@ -314,7 +396,7 @@ export default {
       etapaForm.order = 1
 
       // Abrir modal
-      const modal = new bootstrap.Modal(document.getElementById('novaEtapaModal'))
+      const modal = Modal.getOrCreateInstance(document.getElementById('novaEtapaModal'))
       modal.show()
     }
 
@@ -324,7 +406,7 @@ export default {
       etapaForm.order = etapa.order
 
       // Abrir modal
-      const modal = new bootstrap.Modal(document.getElementById('novaEtapaModal'))
+      const modal = Modal.getOrCreateInstance(document.getElementById('novaEtapaModal'))
       modal.show()
     }
 
@@ -361,12 +443,17 @@ export default {
       funilForm,
       etapaForm,
       editFunil,
-      deleteFunil,
       addEtapa,
       editEtapa,
       deleteEtapa,
       saveFunil,
-      saveEtapa
+      saveEtapa,
+      funilErrors,
+      funilToDelete,
+      openDeleteModal,
+      confirmDeleteFunil,
+      openNewFunilModal,
+      hasLevelConfig
     }
   }
 }
