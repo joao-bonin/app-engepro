@@ -1,43 +1,54 @@
+// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-import Projetos from '../views/Projetos.vue'
-import FunisEtapas from '../views/FunisEtapas.vue'
+import { isAuthenticated } from '@/services/auth'
 
-const routes = [
-  {
-    path: '/',
-    redirect: '/projetos'
-  },
-  {
-    path: '/projetos',
-    name: 'Projetos',
-    component: Projetos
-  },
-  {
-    path: '/funis-etapas',
-    name: 'FunisEtapas',
-    component: FunisEtapas
-  },
-  {
-    path: '/usuarios',
-    name: 'Usuarios',
-    component: () => import('../views/Usuarios.vue')
-  },
-  {
-    path: '/relatorios',
-    name: 'Relatorios',
-    component: () => import('../views/Relatorios.vue')
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: () => import('../views/Login.vue')
-  }
-]
+// Login fora do layout
+import LoginIsolated from '@/views/LoginIsolated.vue'
+
+// Lazy load do Layout (code-splitting)
+const Layout = () => import('@/components/layout/Layout.vue')
+
+// Views herdadas do projeto (ajuste nomes conforme existirem no repo)
+const Projetos     = () => import('@/views/Projetos.vue')
+const FunisEtapas  = () => import('@/views/FunisEtapas.vue')
+const Usuarios     = () => import('@/views/Usuarios.vue')
+const Relatorios   = () => import('@/views/Relatorios.vue')
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
-  routes
+  history: createWebHistory('/'),
+  routes: [
+    // Rota isolada (sem layout)
+    { path: '/login', name: 'Login', component: LoginIsolated },
+
+    // Rotas protegidas que "herdam" funcionalidades do projeto via layout
+    {
+      path: '/',
+      component: Layout,
+      meta: { requiresAuth: true },
+      children: [
+        { path: '',            name: 'Projetos',    component: Projetos },
+        { path: 'funis-etapas',name: 'FunisEtapas', component: FunisEtapas },
+        { path: 'usuarios',    name: 'Usuarios',    component: Usuarios },
+        { path: 'relatorios',  name: 'Relatorios',  component: Relatorios }
+      ]
+    },
+
+    // fallback
+    { path: '/:pathMatch(.*)*', redirect: '/' }
+  ]
 })
 
-export default router
+// Guarda de rota: exige login nas rotas com meta.requiresAuth
+router.beforeEach((to, from, next) => {
+  // const logged = isAuthenticated();
+  const logged = isAuthenticated();
+  if (to.matched.some(r => r.meta.requiresAuth) && !logged) {
+    next({ path: '/login' });
+  } else if (to.path === '/login' && logged) {
+    next({ path: '/' });
+  } else {
+    next();
+  }
+});
 
+export default router
