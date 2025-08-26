@@ -134,6 +134,8 @@ export default {
     const editingFunil = ref(null)
     const selectedFunilId = ref(null)
 
+    const token = localStorage.getItem("token");
+
     const funilForm = reactive({
       name: '',
       description: ''
@@ -151,7 +153,8 @@ export default {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
-            'Content-Type': 'application/json;charset=UTF-8'
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Authorization': `Bearer ${token}`
           }
         });
 
@@ -191,7 +194,8 @@ export default {
               method: 'DELETE',
               headers: {
                 'Accept': 'application/json',
-                'Content-Type': 'application/json;charset=UTF-8'
+                'Content-Type': 'application/json;charset=UTF-8',
+                'Authorization': `Bearer ${token}`
               }
             });
           } catch (error) {
@@ -215,7 +219,8 @@ export default {
             method: 'PUT',
             headers: {
               'Accept': 'application/json',
-              'Content-Type': 'application/json;charset=UTF-8'
+              'Content-Type': 'application/json;charset=UTF-8',
+              'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(editedFunnel)
           })
@@ -246,7 +251,8 @@ export default {
             method: 'POST',
             headers: {
               'Accept': 'application/json',
-              'Content-Type': 'application/json;charset=UTF-8'
+              'Content-Type': 'application/json;charset=UTF-8',
+              'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(newFunnel)
           })

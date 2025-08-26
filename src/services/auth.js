@@ -5,7 +5,25 @@ export function isAuthenticated() {
 export async function login(email, password) {
   // TODO: chame sua API real aqui e salve o token retornado
   if (email && password) {
-    localStorage.setItem('token', 'fake-token');
+
+    const credentials = {
+      email: email,
+      password: password,
+    }
+
+    const response = await fetch('http://localhost:9000/login', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json;charset=UTF-8'
+      },
+      body: JSON.stringify(credentials)
+    })
+
+    if (!response.ok) throw new Error('Erro ao fazer login')
+
+    const login = await response.json()
+    localStorage.setItem('token', login.token);
     return true;
   }
   return false;
