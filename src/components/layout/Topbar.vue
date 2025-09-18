@@ -1,40 +1,31 @@
 <template>
   <nav class="navbar navbar-expand-lg navbar-custom">
     <div class="container-fluid">
-      <button 
-        type="button" 
-        id="sidebarCollapse" 
-        class="btn btn-sm btn-primary-custom d-md-none"
-        @click="toggleSidebar"
-      >
+      <button type="button" id="sidebarCollapse" class="btn btn-sm btn-primary-custom d-md-none" @click="toggleSidebar">
         <i class="bi bi-list"></i>
       </button>
-      
+
       <div class="ms-auto d-flex align-items-center">
         <div class="dropdown">
-          <a 
-            href="#" 
-            class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" 
-            id="userDropdown" 
-            data-bs-toggle="dropdown" 
-            aria-expanded="false"
-          >
-            <img 
-              src="https://placehold.co/32x32/34495e/FFFFFF?text=JB" 
-              alt="User" 
-              width="32" 
-              height="32" 
-              class="rounded-circle me-2"
-            >
+          <a href="#" class="d-flex align-items-center text-dark text-decoration-none" @click.prevent="toggleDropdown">
+            <div class="user-avatar me-2">
+              <span v-if="!currentUser.avatar">{{ initials }}</span>
+              <img v-else :src="currentUser.avatar" alt="User" class="user-avatar">
+            </div>
             <span>{{ currentUser.name }}</span>
+            <i class="bi bi-caret-down ms-2"></i>
           </a>
-          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+
+          <!-- Dropdown controlado pelo Vue -->
+          <ul v-if="dropdownOpen" class="dropdown-menu dropdown-menu-end show">
             <li>
               <a class="dropdown-item" href="#" @click="viewProfile">
                 <i class="bi bi-person me-2"></i>Perfil
               </a>
             </li>
-            <li><hr class="dropdown-divider"></li>
+            <li>
+              <hr class="dropdown-divider">
+            </li>
             <li>
               <a class="dropdown-item" href="#" @click="logout">
                 <i class="bi bi-box-arrow-right me-2"></i>Sair
@@ -47,61 +38,115 @@
   </nav>
 </template>
 
+
 <script>
-import { ref, inject } from 'vue'
+import { ref, inject, onMounted, onBeforeUnmount, computed } from 'vue'
+import { doLogout } from '@/services/auth'
 
 export default {
   name: 'Topbar',
   setup() {
-    // Usar provide/inject para compartilhar estado do sidebar
     const sidebarActive = inject('sidebarActive', ref(false))
-    
-    const currentUser = ref({
-      name: 'João Bonin',
-      email: 'joao.bonin@engepro.com'
+    const dropdownOpen = ref(false)
+
+    const initials = computed(() => {
+      if (!currentUser.value.name) return "U"
+      return currentUser.value.name
+        .split(" ")
+        .map(n => n[0])
+        .join("")
+        .substring(0, 2)
+        .toUpperCase()
     })
-    
+
+    const currentUser = ref({
+      name: localStorage.getItem('userName') || 'Usuário',
+      email: localStorage.getItem('userEmail') || 'usuario@engepro.com',
+      avatar: localStorage.getItem('userAvatar') || null
+    })
+
     const toggleSidebar = () => {
       sidebarActive.value = !sidebarActive.value
     }
-    
+
+    const toggleDropdown = () => {
+      dropdownOpen.value = !dropdownOpen.value
+    }
+
+    const closeDropdown = () => {
+      dropdownOpen.value = false
+    }
+
     const viewProfile = () => {
-      // Implementar visualização de perfil
       console.log('Ver perfil')
     }
-    
-    const logout = () => {
-      // Implementar logout
-      console.log('Logout')
+
+    const logout = async () => {
+      doLogout()
     }
-    
+
+    // fecha dropdown se clicar fora
+    const handleClickOutside = (event) => {
+      const dropdownEl = document.querySelector('.dropdown')
+      if (dropdownEl && !dropdownEl.contains(event.target)) {
+        dropdownOpen.value = false
+      }
+    }
+
+    onMounted(() => {
+      document.addEventListener('click', handleClickOutside)
+    })
+
+    onBeforeUnmount(() => {
+      document.removeEventListener('click', handleClickOutside)
+    })
+
     return {
       currentUser,
+      sidebarActive,
+      dropdownOpen,
       toggleSidebar,
+      toggleDropdown,
+      closeDropdown,
       viewProfile,
-      logout
+      logout,
+      initials
     }
   }
 }
 </script>
 
+
+
 <style scoped>
-.navbar-custom {
-  background-color: white;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  height: var(--topbar-height);
-  position: fixed;
-  top: 0;
-  left: var(--sidebar-width);
-  right: 0;
-  z-index: 1020;
-  transition: left 0.3s;
+/* Força tamanho fixo do dropdown */
+.dropdown-menu {
+  min-width: 180px;
+  /* largura mínima */
+  max-width: 220px;
+  /* largura máxima opcional */
+  padding: 0.5rem 0;
+  border-radius: 0.5rem;
 }
 
-@media (max-width: 768px) {
-  .navbar-custom {
-    left: 0;
-  }
+/* Itens do dropdown */
+.dropdown-item {
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+}
+
+/* Avatar fixo */
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 50%;
+  background-color: #34495e;
+  /* cor padrão */
+  color: #fff;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
-

@@ -16,7 +16,8 @@
           <button class="accordion-button" type="button" data-bs-toggle="collapse"
             :data-bs-target="`#collapseFunil${funil.id}`" aria-expanded="true"
             :aria-controls="`collapseFunil${funil.id}`">
-            {{ funil.name }}
+            <strong>{{ funil.name }}</strong>
+            <div v-if="funil.description">&nbsp; - &nbsp;{{ funil.description }}</div>
             <span v-if="funil.etapas" class="badge bg-secondary ms-2">{{ funil.etapas.length }} Etapas</span>
           </button>
         </h2>
@@ -55,6 +56,7 @@
       </div>
     </div>
 
+
     <!-- Modal Novo/Editar Funil -->
     <div class="modal fade" id="novoFunilModal" tabindex="-1">
       <div class="modal-dialog">
@@ -66,20 +68,28 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <!-- Exibir erros -->
-            <div v-if="funilErrors && funilErrors.length" class="alert alert-danger">
-              <ul class="mb-0">
-                <li v-for="(err, i) in funilErrors" :key="i">{{ err }}</li>
-              </ul>
-            </div>
-            <form @submit.prevent="saveFunil">
+            <form @submit.prevent="saveFunil" novalidate>
+              <!-- Campo Nome -->
               <div class="mb-3">
-                <label class="form-label">Nome:</label>
-                <input type="text" class="form-control" v-model="funilForm.name" required>
+                <label class="form-label">Nome <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" :class="{ 'is-invalid': funilErrors.name }"
+                  v-model="funilForm.name" required>
+                <div class="invalid-feedback">
+                  {{ funilErrors.name || 'O nome do funil é obrigatório.' }}
+                </div>
               </div>
+
+              <!-- Campo Descrição -->
               <div class="mb-3">
-                <label class="form-label">Descrição:</label>
-                <textarea rows="3" class="form-control" v-model="funilForm.description"></textarea>
+                <label class="form-label">Descrição (opcional)</label>
+                <textarea rows="3" maxlength="140" class="form-control"
+                  :class="{ 'is-invalid': funilErrors.description }" v-model="funilForm.description"></textarea>
+                <div class="invalid-feedback">
+                  {{ funilErrors.description || 'A descrição deve ter no máximo 140 caracteres.' }}
+                </div>
+                <div class="form-text">
+                  Máximo de 140 caracteres.
+                </div>
               </div>
             </form>
           </div>
@@ -94,6 +104,8 @@
         </div>
       </div>
     </div>
+
+
 
     <!-- Modal Nova/Editar Etapa -->
     <div class="modal fade" id="novaEtapaModal" tabindex="-1">
@@ -264,8 +276,24 @@ export default {
     }
 
     const saveFunil = async () => {
-      if (editingFunil.value) {
+      // resetar erros a cada tentativa
+      funilErrors.value = {}
 
+      // validação simples
+      if (!funilForm.name || funilForm.name.trim() === "") {
+        funilErrors.value.name = "O nome do funil é obrigatório."
+      }
+
+      if (funilForm.description.length > 140) {
+        funilErrors.value.description = "A descrição deve ter no máximo 140 caracteres."
+      }
+
+      // se tiver erros, não continua
+      if (Object.keys(funilErrors.value).length > 0) {
+        return
+      }
+
+      if (editingFunil.value) {
         const editedFunnel = {
           name: funilForm.name,
           description: funilForm.description,
@@ -289,15 +317,12 @@ export default {
           const index = funis.value.findIndex(f => f.id === funnel.id)
           if (index !== -1) {
             funis.value[index] = funnel
-          } else {
-            console.warn('Funil editado não encontrado na lista');
           }
 
           const modalEl = document.getElementById('novoFunilModal')
           const modal = Modal.getOrCreateInstance(modalEl)
           modal.hide()
 
-          // garante que o backdrop sumiu
           document.querySelectorAll('.modal-backdrop').forEach(el => el.remove())
           document.body.classList.remove('modal-open')
           document.body.style.removeProperty('overflow')
@@ -305,7 +330,6 @@ export default {
         } catch (error) {
           console.error('Erro ao salvar funil:', error)
         }
-
       } else {
         const newFunnel = {
           name: funilForm.name,
@@ -339,7 +363,6 @@ export default {
           const modal = Modal.getOrCreateInstance(modalEl)
           modal.hide()
 
-          // garante que o backdrop sumiu
           document.querySelectorAll('.modal-backdrop').forEach(el => el.remove())
           document.body.classList.remove('modal-open')
           document.body.style.removeProperty('overflow')
@@ -350,9 +373,8 @@ export default {
       }
 
       resetFunilForm()
-      const modal = Modal.getOrCreateInstance(document.getElementById('novoFunilModal'))
-      modal.hide()
     }
+
 
 
     // #### Etapas

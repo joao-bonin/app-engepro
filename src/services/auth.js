@@ -3,7 +3,6 @@ export function isAuthenticated() {
 }
 
 export async function login(email, password) {
-  // TODO: chame sua API real aqui e salve o token retornado
   if (email && password) {
 
     const credentials = {
@@ -25,12 +24,32 @@ export async function login(email, password) {
     const login = await response.json()
     localStorage.setItem('token', login.token);
     localStorage.setItem('hasLevelConfig', login.hasLevelConfig);
+    localStorage.setItem('userName', login.name);
+    localStorage.setItem('userEmail', login.email);
     return true;
   }
   return false;
 }
 
-export function logout() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('hasLevelConfig');
+export async function doLogout() {
+  try {
+
+    await fetch('http://localhost:9000/logout', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+
+  } catch (e) {
+    console.error('Erro ao chamar logout:', e)
+
+  } finally {
+    localStorage.removeItem('token');
+    localStorage.removeItem('hasLevelConfig');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+
+    window.location.href = '/login'
+  }
 }
