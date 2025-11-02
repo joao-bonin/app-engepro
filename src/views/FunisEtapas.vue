@@ -18,7 +18,7 @@
             :aria-controls="`collapseFunil${funil.id}`">
             <strong>{{ funil.name }}</strong>
             <div v-if="funil.description">&nbsp; - &nbsp;{{ funil.description }}</div>
-            <span v-if="funil.etapas" class="badge bg-secondary ms-2">{{ funil.etapas.length }} Etapas</span>
+            <span v-if="funil.steps" class="badge bg-secondary ms-2">{{ funil.steps.length }} Etapas</span>
           </button>
         </h2>
         <div :id="`collapseFunil${funil.id}`" class="accordion-collapse collapse" :class="{ show: funil.id === 1 }"
@@ -28,7 +28,7 @@
               <button v-if="hasLevelConfig" class="btn btn-primary btn-sm me-2" @click="editFunil(funil)">
                 <i class="bi bi-pencil me-1"></i>Editar Funil
               </button>
-              <button v-if="hasLevelConfig" class="btn btn-sm btn-danger me-2" @click="openDeleteModal(funil)">
+              <button v-if="hasLevelConfig" class="btn btn-sm btn-danger me-2" @click="openDeleteFunilModal(funil)">
                 <i class="bi bi-trash me-1"></i>Excluir Funil
               </button>
               <button v-if="hasLevelConfig" class="btn btn-sm btn-primary" @click="addEtapa(funil.id)">
@@ -36,16 +36,22 @@
               </button>
             </div>
 
-            <ul class="list-group">
-              <li v-for="etapa in funil.etapas" :key="etapa.id"
+            <div v-if="funil.steps && funil.steps.length === 0" class="alert alert-info">
+              O funil não possui etapas cadastradas. Clique em <strong>"Nova Etapa"</strong> para adicionar.
+            </div>
+
+            <ul v-if="funil.steps && funil.steps.length > 0" class="list-group">
+              <li v-for="etapa in funil.steps" :key="etapa.id"
                 class="list-group-item d-flex justify-content-between align-items-center">
-                {{ etapa.name }}
-                <span class="badge bg-primary-custom rounded-pill">{{ etapa.order }}</span>
                 <div>
-                  <button class="btn btn-sm btn-warning me-1" @click="editEtapa(etapa)">
+                  <strong>{{ etapa.name }}</strong>
+                  <span v-if="etapa.description" class="text-muted ms-2">- {{ etapa.description }}</span>
+                </div>
+                <div class="d-flex align-items-center">
+                  <button v-if="hasLevelConfig" class="btn btn-sm btn-warning me-1" @click="editEtapa(etapa, funil.id)">
                     <i class="bi bi-pencil"></i>
                   </button>
-                  <button class="btn btn-sm btn-danger" @click="deleteEtapa(etapa.id)">
+                  <button v-if="hasLevelConfig" class="btn btn-sm btn-danger" @click="openDeleteEtapaModal(etapa)">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>
@@ -118,14 +124,25 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <form @submit.prevent="saveEtapa">
+            <form @submit.prevent="saveEtapa" novalidate>
               <div class="mb-3">
-                <label class="form-label">Nome:</label>
-                <input type="text" class="form-control" v-model="etapaForm.name" required>
+                <label class="form-label">Nome <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" :class="{ 'is-invalid': etapaErrors.name }"
+                  v-model="etapaForm.name" required>
+                <div class="invalid-feedback">
+                  {{ etapaErrors.name || 'O nome da etapa é obrigatório.' }}
+                </div>
               </div>
               <div class="mb-3">
-                <label class="form-label">Descrição:</label>
-                <textarea rows="3" class="form-control" v-model="etapaForm.order"></textarea>
+                <label class="form-label">Descrição (opcional)</label>
+                <textarea rows="3" maxlength="140" class="form-control"
+                  :class="{ 'is-invalid': etapaErrors.description }" v-model="etapaForm.description"></textarea>
+                <div class="invalid-feedback">
+                  {{ etapaErrors.description || 'A descrição deve ter no máximo 140 caracteres.' }}
+                </div>
+                <div class="form-text">
+                  Máximo de 140 caracteres.
+                </div>
               </div>
             </form>
           </div>
@@ -141,8 +158,8 @@
       </div>
     </div>
 
-    <!-- Modal de Confirmação de Exclusão -->
-    <div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+    <!-- Modal de Confirmação de Exclusão de Funil -->
+    <div class="modal fade" id="confirmDeleteFunilModal" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
@@ -155,6 +172,25 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
             <button type="button" class="btn btn-danger" @click="confirmDeleteFunil">Excluir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão de Etapa -->
+    <div class="modal fade" id="confirmDeleteEtapaModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirmar Exclusão</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            Tem certeza que deseja excluir a etapa <strong>{{ etapaToDelete?.name }}</strong>?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-danger" @click="confirmDeleteEtapa">Excluir</button>
           </div>
         </div>
       </div>
@@ -173,7 +209,7 @@ export default {
     const funis = ref([]);
     const editingFunil = ref(null)
     const selectedFunilId = ref(null)
-    const funilErrors = ref([])
+    const funilErrors = ref({})
     const funilToDelete = ref(null)
 
     const token = localStorage.getItem("token");
@@ -188,7 +224,7 @@ export default {
       funilForm.name = ''
       funilForm.description = ''
       editingFunil.value = null
-      funilErrors.value = []
+      funilErrors.value = {}
     }
 
     const loadFunis = async () => {
@@ -225,23 +261,21 @@ export default {
 
     const editFunil = (funil) => {
       editingFunil.value = funil
-
       funilForm.name = funil.name
       funilForm.description = funil.description
 
-      // Abrir modal
       const modal = Modal.getOrCreateInstance(document.getElementById('novoFunilModal'))
       modal.show()
     }
 
-    const openDeleteModal = (funil) => {
+    const openDeleteFunilModal = (funil) => {
       funilToDelete.value = funil
-      const modal = Modal.getOrCreateInstance(document.getElementById('confirmDeleteModal'))
+      const modal = Modal.getOrCreateInstance(document.getElementById('confirmDeleteFunilModal'))
       modal.show()
     }
 
     const openNewFunilModal = () => {
-      resetFunilForm()  // limpa campos e erros
+      resetFunilForm()
       const modal = Modal.getOrCreateInstance(document.getElementById('novoFunilModal'))
       modal.show()
     }
@@ -251,16 +285,8 @@ export default {
 
       const id = funilToDelete.value.id
 
-      // Remove da lista local
-      const index = funis.value.findIndex(f => f.id === id)
-      if (index !== -1) funis.value.splice(index, 1)
-
-      // Fecha modal
-      const modal = Modal.getOrCreateInstance(document.getElementById('confirmDeleteModal'))
-      modal.hide()
-
       try {
-        await fetch('http://localhost:9000/funnel/' + id, {
+        const response = await fetch('http://localhost:9000/funnel/' + id, {
           method: 'DELETE',
           headers: {
             'Accept': 'application/json',
@@ -268,6 +294,15 @@ export default {
             'Authorization': `Bearer ${token}`
           }
         })
+
+        if (!response.ok) throw new Error('Erro ao deletar funil')
+
+        const index = funis.value.findIndex(f => f.id === id)
+        if (index !== -1) funis.value.splice(index, 1)
+
+        const modal = Modal.getOrCreateInstance(document.getElementById('confirmDeleteFunilModal'))
+        modal.hide()
+
       } catch (error) {
         console.error('Erro ao deletar funil:', error)
       }
@@ -276,19 +311,12 @@ export default {
     }
 
     const saveFunil = async () => {
-      // resetar erros a cada tentativa
       funilErrors.value = {}
 
-      // validação simples
       if (!funilForm.name || funilForm.name.trim() === "") {
         funilErrors.value.name = "O nome do funil é obrigatório."
       }
 
-      if (funilForm.description.length > 140) {
-        funilErrors.value.description = "A descrição deve ter no máximo 140 caracteres."
-      }
-
-      // se tiver erros, não continua
       if (Object.keys(funilErrors.value).length > 0) {
         return
       }
@@ -311,6 +339,11 @@ export default {
             body: JSON.stringify(editedFunnel)
           })
 
+          if (response.status === 422) {
+            funilErrors.value = await response.json()
+            return
+          }
+
           if (!response.ok) throw new Error('Erro ao atualizar o funil')
 
           const funnel = await response.json()
@@ -319,13 +352,7 @@ export default {
             funis.value[index] = funnel
           }
 
-          const modalEl = document.getElementById('novoFunilModal')
-          const modal = Modal.getOrCreateInstance(modalEl)
-          modal.hide()
-
-          document.querySelectorAll('.modal-backdrop').forEach(el => el.remove())
-          document.body.classList.remove('modal-open')
-          document.body.style.removeProperty('overflow')
+          closeModal('novoFunilModal')
 
         } catch (error) {
           console.error('Erro ao salvar funil:', error)
@@ -358,14 +385,7 @@ export default {
           const createdFunil = await response.json()
           funis.value.push(createdFunil)
 
-          resetFunilForm()
-          const modalEl = document.getElementById('novoFunilModal')
-          const modal = Modal.getOrCreateInstance(modalEl)
-          modal.hide()
-
-          document.querySelectorAll('.modal-backdrop').forEach(el => el.remove())
-          document.body.classList.remove('modal-open')
-          document.body.style.removeProperty('overflow')
+          closeModal('novoFunilModal')
 
         } catch (error) {
           console.error('Erro ao salvar funil:', error)
@@ -379,83 +399,162 @@ export default {
 
     // #### Etapas
     const editingEtapa = ref(null)
+    const etapaErrors = ref({})
+    const etapaToDelete = ref(null)
 
-    const saveEtapa = () => {
+    const etapaForm = reactive({
+      name: '',
+      description: ''
+    })
+
+    const resetEtapaForm = () => {
+      etapaForm.name = ''
+      etapaForm.description = ''
+      editingEtapa.value = null
+      selectedFunilId.value = null
+      etapaErrors.value = {}
+    }
+
+    const addEtapa = (funilId) => {
+      resetEtapaForm()
+      selectedFunilId.value = funilId
+
+      const modal = Modal.getOrCreateInstance(document.getElementById('novaEtapaModal'))
+      modal.show()
+    }
+
+    const editEtapa = (etapa, funilId) => {
+      editingEtapa.value = etapa
+      selectedFunilId.value = funilId
+      etapaForm.name = etapa.name
+      etapaForm.description = etapa.description || ''
+
+      const modal = Modal.getOrCreateInstance(document.getElementById('novaEtapaModal'))
+      modal.show()
+    }
+
+    const openDeleteEtapaModal = (etapa) => {
+      etapaToDelete.value = etapa
+      const modal = Modal.getOrCreateInstance(document.getElementById('confirmDeleteEtapaModal'))
+      modal.show()
+    }
+
+    const saveEtapa = async () => {
+      etapaErrors.value = {}
+
+      if (!etapaForm.name || etapaForm.name.trim() === "") {
+        etapaErrors.value.name = "O nome da etapa é obrigatório."
+      }
+
+      if (Object.keys(etapaErrors.value).length > 0) {
+        return
+      }
+
       if (editingEtapa.value) {
-        // Editar etapa existente
-        editingEtapa.value.name = etapaForm.name
-        editingEtapa.value.order = etapaForm.order
-      } else {
-        // Criar nova etapa
-        const funil = funis.value.find(f => f.id === selectedFunilId.value)
-        if (funil) {
-          const newEtapa = {
-            id: Date.now(),
-            name: etapaForm.name,
-            order: etapaForm.order,
-            funilId: selectedFunilId.value
+        const editedStep = {
+          name: etapaForm.name,
+          description: etapaForm.description,
+          funnelId: selectedFunilId.value
+        }
+
+        try {
+          const response = await fetch('http://localhost:9000/step/' + editingEtapa.value.id, {
+            method: 'PUT',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json;charset=UTF-8',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(editedStep)
+          })
+
+          if (response.status === 422) {
+            etapaErrors.value = await response.json()
+            return
           }
-          funil.etapas.push(newEtapa)
-          funil.etapas.sort((a, b) => a.order - b.order)
+
+          if (!response.ok) throw new Error('Erro ao atualizar a etapa')
+
+          await loadFunis()
+          closeModal('novaEtapaModal')
+
+        } catch (error) {
+          console.error('Erro ao salvar etapa:', error)
+        }
+      } else {
+        const newStep = {
+          name: etapaForm.name,
+          description: etapaForm.description,
+          funnelId: selectedFunilId.value
+        }
+
+        try {
+          const response = await fetch('http://localhost:9000/step', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json;charset=UTF-8',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(newStep)
+          })
+
+          if (response.status === 422) {
+            etapaErrors.value = await response.json()
+            return
+          }
+
+          if (!response.ok) throw new Error('Erro ao criar a etapa')
+
+          await loadFunis()
+          closeModal('novaEtapaModal')
+
+        } catch (error) {
+          console.error('Erro ao salvar etapa:', error)
         }
       }
 
       resetEtapaForm()
-      // Fechar modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('novaEtapaModal'))
-      modal.hide()
     }
 
-    const etapaForm = reactive({
-      name: '',
-      order: 1
-    })
+    const confirmDeleteEtapa = async () => {
+      if (!etapaToDelete.value) return
 
-    const addEtapa = (funilId) => {
-      selectedFunilId.value = funilId
-      editingEtapa.value = null
-      etapaForm.name = ''
-      etapaForm.order = 1
+      const id = etapaToDelete.value.id
+      console.log('Deletando etapa com ID:', id)
 
-      // Abrir modal
-      const modal = Modal.getOrCreateInstance(document.getElementById('novaEtapaModal'))
-      modal.show()
-    }
-
-    const editEtapa = (etapa) => {
-      editingEtapa.value = etapa
-      etapaForm.name = etapa.name
-      etapaForm.order = etapa.order
-
-      // Abrir modal
-      const modal = Modal.getOrCreateInstance(document.getElementById('novaEtapaModal'))
-      modal.show()
-    }
-
-    const resetEtapaForm = () => {
-      etapaForm.name = ''
-      etapaForm.order = 1
-      editingEtapa.value = null
-      selectedFunilId.value = null
-    }
-
-    const deleteEtapa = (etapaId) => {
-      if (confirm('Tem certeza que deseja excluir esta etapa?')) {
-        funis.value.forEach(funil => {
-          const index = funil.etapas.findIndex(e => e.id === etapaId)
-          if (index !== -1) {
-            console.log("Excluindo etapa:", etapaId);
-            funil.etapas.splice(index, 1)
-            fetch('http://localhost:9000/step/' + etapaId, {
-              method: 'DELETE',
-              headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json;charset=UTF-8'
-              }
-            });
+      try {
+        const response = await fetch('http://localhost:9000/step/' + id, {
+          method: 'DELETE',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Authorization': `Bearer ${token}`
           }
         })
+
+        if (!response.ok) throw new Error('Erro ao deletar etapa')
+
+        await loadFunis()
+
+        const modal = Modal.getOrCreateInstance(document.getElementById('confirmDeleteEtapaModal'))
+        modal.hide()
+
+      } catch (error) {
+        console.error('Erro ao deletar etapa:', error)
       }
+
+      etapaToDelete.value = null
+    }
+
+    const closeModal = (modalId) => {
+      const modalEl = document.getElementById(modalId)
+      const modal = Modal.getOrCreateInstance(modalEl)
+      modal.hide()
+
+      document.querySelectorAll('.modal-backdrop').forEach(el => el.remove())
+      document.body.classList.remove('modal-open')
+      document.body.style.removeProperty('overflow')
     }
 
     return {
@@ -467,13 +566,16 @@ export default {
       editFunil,
       addEtapa,
       editEtapa,
-      deleteEtapa,
       saveFunil,
       saveEtapa,
       funilErrors,
+      etapaErrors,
       funilToDelete,
-      openDeleteModal,
+      etapaToDelete,
+      openDeleteFunilModal,
+      openDeleteEtapaModal,
       confirmDeleteFunil,
+      confirmDeleteEtapa,
       openNewFunilModal,
       hasLevelConfig
     }
@@ -497,5 +599,9 @@ export default {
 
 .list-group-item:hover {
   background-color: #f8f9fa;
+}
+
+.bg-primary-custom {
+  background-color: var(--primary-color, #007bff) !important;
 }
 </style>

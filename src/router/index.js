@@ -9,10 +9,10 @@ import LoginIsolated from '@/views/LoginIsolated.vue'
 const Layout = () => import('@/components/layout/Layout.vue')
 
 // Views herdadas do projeto (ajuste nomes conforme existirem no repo)
-const Projetos     = () => import('@/views/Projetos.vue')
-const FunisEtapas  = () => import('@/views/FunisEtapas.vue')
-const Usuarios     = () => import('@/views/Usuarios.vue')
-const Relatorios   = () => import('@/views/Relatorios.vue')
+const Projetos = () => import('@/views/Projetos.vue')
+const FunisEtapas = () => import('@/views/FunisEtapas.vue')
+const Usuarios = () => import('@/views/Usuarios.vue')
+const Relatorios = () => import('@/views/Relatorios.vue')
 
 const router = createRouter({
   history: createWebHistory('/'),
@@ -26,10 +26,10 @@ const router = createRouter({
       component: Layout,
       meta: { requiresAuth: true },
       children: [
-        { path: '',            name: 'Projetos',    component: Projetos },
-        { path: 'funis-etapas',name: 'FunisEtapas', component: FunisEtapas },
-        { path: 'usuarios',    name: 'Usuarios',    component: Usuarios },
-        { path: 'relatorios',  name: 'Relatorios',  component: Relatorios }
+        { path: 'projetos', name: 'Projetos', component: Projetos },
+        { path: 'funis-etapas', name: 'FunisEtapas', component: FunisEtapas },
+        { path: 'usuarios', name: 'Usuarios', component: Usuarios },
+        { path: '', name: 'Relatorios', component: Relatorios }
       ]
     },
 

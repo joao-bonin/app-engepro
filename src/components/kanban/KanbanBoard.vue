@@ -6,6 +6,7 @@
       :column="column"
       :projects="getProjectsByStage(column.id)"
       @move-project="$emit('move-project', $event.projectId, $event.newStage)"
+      @edit-project="$emit('edit-project', $event)"
     />
   </div>
 </template>
@@ -28,7 +29,7 @@ export default {
       required: true
     }
   },
-  emits: ['move-project'],
+  emits: ['move-project', 'edit-project'],
   setup(props) {
     const getProjectsByStage = (stageId) => {
       return props.projects.filter(project => project.stage === stageId)
@@ -57,4 +58,3 @@ export default {
   }
 }
 </style>
-

@@ -14,6 +14,7 @@
       :key="project.id"
       :project="project"
       @dragstart="onDragStart"
+      @edit-project="onEditProject"
     />
     
     <div v-if="projects.length === 0" class="empty-column">
@@ -40,30 +41,56 @@ export default {
       required: true
     }
   },
-  emits: ['move-project'],
+  emits: ['move-project', 'edit-project'],
   setup(props, { emit }) {
-    let draggedProjectId = null
+    const onDragStart = (event) => {
+      console.log('🎯 KanbanColumn - onDragStart recebeu:', event)
+      event.dragEvent.dataTransfer.setData('projectData', JSON.stringify({
+        projectId: event.projectId,
+        stageId: event.stageId
+      }))
+      console.log('📦 Armazenado no dataTransfer')
+    }
     
-    const onDragStart = (projectId) => {
-      draggedProjectId = projectId
+    const onEditProject = (project) => {
+      console.log('✏️ KanbanColumn - Recebeu edit-project:', project)
+      emit('edit-project', project)
+      console.log('✏️ KanbanColumn - Reemitiu edit-project')
     }
     
     const onDrop = (event) => {
       event.preventDefault()
+      console.log('🎪 KanbanColumn - onDrop chamado')
       
-      if (draggedProjectId && draggedProjectId !== props.column.id) {
-        emit('move-project', {
-          projectId: draggedProjectId,
-          newStage: props.column.id
-        })
+      try {
+        const data = event.dataTransfer.getData('projectData')
+        console.log('📥 Dados recuperados:', data)
+        
+        if (data) {
+          const { projectId, stageId } = JSON.parse(data)
+          console.log('   projectId:', projectId)
+          console.log('   stageId origem:', stageId)
+          console.log('   column.id destino:', props.column.id)
+          
+          if (stageId !== props.column.id) {
+            console.log('✅ Emitindo move-project')
+            emit('move-project', {
+              projectId: projectId,
+              newStage: props.column.id
+            })
+          } else {
+            console.log('⚠️ Mesma coluna, não emitiu')
+          }
+        }
+      } catch (error) {
+        console.error('❌ Erro ao processar drop:', error)
       }
-      
-      draggedProjectId = null
     }
     
     return {
       onDragStart,
-      onDrop
+      onDrop,
+      onEditProject
     }
   }
 }
@@ -112,4 +139,3 @@ export default {
   }
 }
 </style>
-

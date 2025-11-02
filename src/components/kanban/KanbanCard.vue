@@ -6,7 +6,8 @@
     @click="editProject"
   >
     <h5>{{ project.name }}</h5>
-    <p>{{ project.client }}, {{ project.description }}</p>
+    <p>{{ project.customer }}</p>
+    <p>{{ project.description }}</p>
     <div class="kanban-card-footer">
       <span>Prazo: {{ project.deadline }}</span>
       <div class="card-actions">
@@ -31,16 +32,25 @@ export default {
       required: true
     }
   },
-  emits: ['dragstart'],
+  emits: ['dragstart', 'edit-project'],
   setup(props, { emit }) {
     const onDragStart = (event) => {
-      emit('dragstart', props.project.id)
+      console.log('🚀 KanbanCard - Iniciando drag:', props.project.id)
+      
       event.dataTransfer.effectAllowed = 'move'
+      
+      // Emite o evento com os dados do projeto E o evento nativo
+      emit('dragstart', {
+        projectId: props.project.id,
+        stageId: props.project.stage,
+        dragEvent: event
+      })
     }
     
     const editProject = () => {
-      // Emitir evento para editar projeto
-      console.log('Editar projeto:', props.project.id)
+      console.log('✏️ KanbanCard - editProject chamado, projeto:', props.project)
+      emit('edit-project', props.project)
+      console.log('✏️ KanbanCard - Evento edit-project emitido')
     }
     
     return {
@@ -110,4 +120,3 @@ export default {
   font-size: 0.75rem;
 }
 </style>
-
