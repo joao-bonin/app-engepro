@@ -38,13 +38,31 @@ const fetchApi = async (url, method = 'GET', data = null) => {
 };
 
 const UserService = {
+    // Listar todos os usuários
     getAllUsers: async () => {
         return fetchApi(API_URL);
     },
 
+    // Listar apenas usuários ativos
     getAllActive: async () => {
         return fetchApi(`${API_URL}/active`);
-    }
-}
+    },
 
-export default UserService
+    // Criar novo usuário
+    createUser: async (userData) => {
+        return fetchApi(API_URL, 'POST', userData);
+    },
+
+    // Atualizar usuário
+    updateUser: async (userId, userData) => {
+        return fetchApi(`${API_URL}/${userId}`, 'PUT', userData);
+    },
+
+    // Ativar usuário
+    deleteUser: async (userId) => {
+        return fetchApi(`${API_URL}/${userId}/activate`, 'PUT');
+    },
+
+};
+
+export default UserService;

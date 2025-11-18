@@ -1,22 +1,45 @@
 <template>
+
   <div class="projetos-page">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2 class="page-title mb-0">Projetos</h2>
-      <button class="btn btn-primary d-flex align-items-center" type="button" data-bs-toggle="offcanvas"
-        data-bs-target="#offcanvasNovoProjeto" aria-controls="offcanvasNovoProjeto" @click="resetFormAndOpenOffcanvas">
-        <i class="bi bi-plus-circle me-2"></i>Novo Projeto
-      </button>
+      <div v-if="hasLevelConfig">
+        <button v-if="funnels.length !== 0" class="btn btn-primary d-flex align-items-center" type="button"
+          data-bs-toggle="offcanvas" data-bs-target="#offcanvasNovoProjeto" aria-controls="offcanvasNovoProjeto"
+          @click="resetFormAndOpenOffcanvas">
+          <i class="bi bi-plus-circle me-2"></i>Novo Projeto
+        </button>
+      </div>
     </div>
 
-    <!-- Seletor de Funil -->
-    <div class="mb-3">
-      <label for="selectFunilKanban" class="form-label">Selecionar Funil:</label>
-      <select class="form-select" id="selectFunilKanban" v-model="selectedFunilId" @change="loadProjetosByFunil">
-        <option v-for="funil in funnels" :key="funil.id" :value="funil.id">
-          {{ funil.name }}
-        </option>
-      </select>
+    <!-- Seletor de Funil + Filtro de Projetos Arquivados -->
+    <div v-if="funnels.length !== 0" class="row mb-3">
+      <!-- Selecionar Funil -->
+      <div class="col-md-3">
+        <label for="selectFunilKanban" class="form-label"><strong>Selecionar Funil:</strong></label>
+        <select class="form-select" id="selectFunilKanban" v-model="selectedFunilId" @change="loadProjetosByFunil">
+          <option v-for="funil in funnels" :key="funil.id" :value="funil.id">
+            {{ funil.name }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Exibir Projetos (Filtro de Arquivamento) -->
+      <div class="col-md-3">
+        <label for="selectArchivedFilter" class="form-label"><strong>Exibir:</strong></label>
+        <select class="form-select" id="selectArchivedFilter" v-model="archivedFilter" @change="loadProjetosByFunil">
+          <option value="active">Projetos Ativos</option>
+          <option value="archived">Projetos Arquivados</option>
+          <option value="all">Todos os Projetos</option>
+        </select>
+      </div>
     </div>
+
+
+    <div v-if="funnels.length === 0" class="alert alert-info">
+      Adicione um funil com etapas para começar a gerenciar seus projetos!
+    </div>
+
 
     <!-- Kanban Board -->
     <KanbanBoard :columns="kanbanColumns" :projects="projects" @move-project="moveProject"
@@ -36,12 +59,20 @@
           <!-- Nome do Projeto -->
           <div class="mb-3">
             <label class="form-label">Nome do Projeto</label>
-            <input type="text" class="form-control" v-model="projectForm.name" required>
+            <input type="text" class="form-control" :class="{ 'is-invalid': projectErrors.name }"
+              v-model="projectForm.name" @blur="validateProjectName" @input="validateProjectName">
+            <div class="invalid-feedback" v-if="projectErrors.name">
+              {{ projectErrors.name }}
+            </div>
           </div>
           <!-- Cliente -->
           <div class="mb-3">
             <label class="form-label">Cliente</label>
-            <input type="text" class="form-control" v-model="projectForm.customer" required>
+            <input type="text" class="form-control" :class="{ 'is-invalid': projectErrors.customer }"
+              v-model="projectForm.customer" @blur="validateProjectCustomer" @input="validateProjectCustomer">
+            <div class="invalid-feedback" v-if="projectErrors.customer">
+              {{ projectErrors.customer }}
+            </div>
           </div>
           <!-- Responsavel -->
           <div class="mb-3">
@@ -52,23 +83,31 @@
               </option>
             </select>
           </div>
-          <!-- Funil -->
+          <!-- Funil - Sempre visível -->
           <div class="mb-3">
             <label class="form-label">Funil</label>
-            <select class="form-select" v-model="projectForm.funnelId" @change="updateStagesForForm">
+            <select class="form-select" :class="{ 'is-invalid': projectErrors.funnelId }" v-model="projectForm.funnelId"
+              @change="updateStagesForForm(); validateProjectFunnel()">
               <option v-for="funil in funnels" :key="funil.id" :value="funil.id">
                 {{ funil.name }}
               </option>
             </select>
+            <div class="invalid-feedback" v-if="projectErrors.funnelId">
+              {{ projectErrors.funnelId }}
+            </div>
           </div>
           <!-- Etapa Inicial -->
           <div class="mb-3">
-            <label class="form-label">Etapa Inicial</label>
-            <select class="form-select" v-model="projectForm.stepId">
+            <label class="form-label">{{ editingProject ? 'Etapa Atual' : 'Etapa Inicial' }}</label>
+            <select class="form-select" :class="{ 'is-invalid': projectErrors.stepId }" v-model="projectForm.stepId"
+              @change="validateProjectStep">
               <option v-for="stage in formStages" :key="stage.id" :value="stage.id">
                 {{ stage.name }}
               </option>
             </select>
+            <div class="invalid-feedback" v-if="projectErrors.stepId">
+              {{ projectErrors.stepId }}
+            </div>
           </div>
           <!-- Descrição -->
           <div class="mb-3">
@@ -78,12 +117,20 @@
           <!-- Data de Início -->
           <div class="mb-3">
             <label class="form-label">Data de Início</label>
-            <input type="date" class="form-control" v-model="projectForm.startDate">
+            <input type="date" class="form-control" :class="{ 'is-invalid': projectErrors.startDate }"
+              v-model="projectForm.startDate" @change="validateProjectDates">
+            <div class="invalid-feedback" v-if="projectErrors.startDate">
+              {{ projectErrors.startDate }}
+            </div>
           </div>
           <!-- Prazo Final -->
           <div class="mb-3">
             <label class="form-label">Prazo Final</label>
-            <input type="date" class="form-control" v-model="projectForm.endDate">
+            <input type="date" class="form-control" :class="{ 'is-invalid': projectErrors.endDate }"
+              v-model="projectForm.endDate" @change="validateProjectDates">
+            <div class="invalid-feedback" v-if="projectErrors.endDate">
+              {{ projectErrors.endDate }}
+            </div>
           </div>
           <!-- Usuário (Mockado, pois o backend exige) -->
           <input type="hidden" v-model="projectForm.userId">
@@ -92,14 +139,58 @@
             <button type="submit" class="btn btn-primary d-flex align-items-center">
               {{ editingProject ? 'Salvar Alterações' : 'Salvar Projeto' }}
             </button>
-            <button v-if="editingProject" type="button" class="btn btn-warning" @click="archiveProject">
-              Arquivar Projeto
+            <!-- Botão de Arquivar/Desarquivar -->
+            <button v-if="editingProject" type="button" class="btn"
+              :class="projectForm.isArchived ? 'btn-success' : 'btn-warning'" @click="openArchiveModal(projectForm)">
+              {{ projectForm.isArchived ? 'Desarquivar Projeto' : 'Arquivar Projeto' }}
             </button>
+
             <!-- O backend não tem rota de exclusão, apenas arquivamento -->
           </div>
         </form>
       </div>
     </div>
+    <!-- Modal de Confirmação de Arquivamento/Desarquivamento -->
+    <div class="modal fade" id="confirmArchiveProjectModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              {{ projectToArchive?.isArchived ? 'Confirmar Desarquivamento' : 'Confirmar Arquivamento' }}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <template v-if="projectToArchive?.isArchived">
+              Tem certeza que deseja <strong>desarquivar</strong> o projeto
+              <strong>{{ projectToArchive?.name }}</strong>?
+              <br />
+              <br />
+              Ele voltará a aparecer no Kanban.
+            </template>
+            <template v-else>
+              Tem certeza que deseja <strong>arquivar</strong> o projeto
+              <strong>{{ projectToArchive?.name }}</strong>?
+              <br />
+              <br />
+              Ele será removido da visualização do Kanban, mas poderá ser acessado através do filtro “Projetos
+              Arquivados”.
+            </template>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              Cancelar
+            </button>
+            <button type="button" class="btn" :class="projectToArchive?.isArchived ? 'btn-success' : 'btn-warning'"
+              @click="confirmArchiveProject">
+              {{ projectToArchive?.isArchived ? 'Desarquivar' : 'Arquivar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
   </div>
 </template>
 
@@ -109,7 +200,8 @@ import KanbanBoard from '../components/kanban/KanbanBoard.vue'
 import ProjectService from '../services/ProjectService'
 import FunnelService from '../services/FunnelService'
 import UserService from '../services/UserService'
-import { Offcanvas } from 'bootstrap'
+import { Modal, Offcanvas } from 'bootstrap'
+
 
 export default {
   name: 'Projetos',
@@ -119,13 +211,17 @@ export default {
   setup() {
     // Dados do Kanban
     const selectedFunilId = ref(null)
+    const archivedFilter = ref('active') // 'active', 'archived', 'all'
     const funnels = ref([])
     const users = ref([])
     const kanbanColumns = ref([])
     const projects = ref([])
 
+    const hasLevelConfig = ref(localStorage.getItem("hasLevelConfig") === "true")
+
     // Dados do Formulário
     const editingProject = ref(null)
+    const projectErrors = ref({})
     const formStages = ref([])
     const projectForm = reactive({
       id: null,
@@ -136,8 +232,74 @@ export default {
       description: '',
       startDate: '',
       endDate: '',
-      userId: 1
+      userId: 1,
+      isArchived: false
     })
+
+    const validateProjectName = () => {
+      if (!projectForm.name || projectForm.name.trim() === "") {
+        projectErrors.value.name = "O nome do projeto é obrigatório."
+      } else {
+        delete projectErrors.value.name
+      }
+    }
+
+    const validateProjectCustomer = () => {
+      if (!projectForm.customer || projectForm.customer.trim() === "") {
+        projectErrors.value.customer = "O nome do cliente é obrigatório."
+      } else {
+        delete projectErrors.value.customer
+      }
+    }
+
+    const validateProjectFunnel = () => {
+      if (!projectForm.funnelId) {
+        projectErrors.value.funnelId = "O funil é obrigatório."
+      } else {
+        delete projectErrors.value.funnelId
+      }
+    }
+
+    const validateProjectStep = () => {
+      if (!projectForm.stepId) {
+        projectErrors.value.stepId = "A etapa é obrigatória."
+      } else {
+        delete projectErrors.value.stepId
+      }
+    }
+
+    const validateProjectDates = () => {
+      delete projectErrors.value.startDate
+      delete projectErrors.value.endDate
+
+      if (projectForm.startDate === "") {
+        projectErrors.value.startDate = "A data de início é obrigatória."
+      }
+
+      if (projectForm.endDate === "") {
+        projectErrors.value.endDate = "A data de fim é obrigatória."
+      }
+
+      if (projectForm.startDate && projectForm.endDate) {
+        const start = new Date(projectForm.startDate)
+        const end = new Date(projectForm.endDate)
+        if (start > end) {
+          projectErrors.value.endDate = "O prazo final não pode ser anterior à data de início."
+        }
+      }
+    }
+
+    const validateProjectForm = () => {
+      projectErrors.value = {} // Limpa todos os erros antes de validar
+
+      validateProjectName()
+      validateProjectCustomer()
+      validateProjectFunnel()
+      validateProjectStep()
+      validateProjectDates()
+
+      return Object.keys(projectErrors.value).length === 0
+    }
 
     const loadFunnels = async () => {
       try {
@@ -147,6 +309,8 @@ export default {
         if (funnelFiltered.length > 0) {
           selectedFunilId.value = funnelFiltered[0].id
           await loadProjetosByFunil()
+        } else {
+          funnels.value = []
         }
       } catch (error) {
         console.error('Erro ao carregar funis:', error)
@@ -169,7 +333,15 @@ export default {
       if (!selectedFunilId.value) return
 
       try {
-        const data = await ProjectService.getProjectsByFunnelId(selectedFunilId.value)
+        let urlParam = ''
+        if (archivedFilter.value === 'active') {
+          urlParam = '?archived=false'
+        } else if (archivedFilter.value === 'archived') {
+          urlParam = '?archived=true'
+        }
+
+        // 🔗 Chamada à API conforme o filtro selecionado
+        const data = await ProjectService.getProjectsByFunnelId(selectedFunilId.value, urlParam)
 
         kanbanColumns.value = data.steps.map(step => ({
           id: step.id,
@@ -181,7 +353,13 @@ export default {
           step.projects.map(p => ({
             ...p,
             stage: p.stepId,
-            deadline: p.endDate ? new Date(p.endDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : 'N/A'
+            deadline: p.endDate
+              ? new Date(p.endDate).toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: '2-digit'
+              })
+              : 'N/A'
           }))
         )
 
@@ -192,23 +370,51 @@ export default {
       }
     }
 
+
     const updateStagesForForm = async () => {
-      const funnelIdToUse = editingProject.value ? selectedFunilId.value : projectForm.funnelId
-      if (!funnelIdToUse) return
+      const funnelIdToUse = projectForm.funnelId || selectedFunilId.value
+
+      console.log('📋 updateStagesForForm - funnelIdToUse:', funnelIdToUse)
+
+      if (!funnelIdToUse) {
+        console.log('❌ Nenhum funil selecionado')
+        return
+      }
 
       try {
         const data = await FunnelService.getStepsByFunnelId(funnelIdToUse)
         formStages.value = data.steps.map(step => ({ id: step.id, name: step.name }))
 
+        console.log('✅ Etapas carregadas:', formStages.value)
+
+        // Se for novo projeto, sempre seleciona a primeira etapa ao trocar de funil
         if (!editingProject.value && formStages.value.length > 0) {
           projectForm.stepId = formStages.value[0].id
+          console.log('🎯 Primeira etapa selecionada automaticamente:', projectForm.stepId)
         }
+
+        // Se for edição, verifica se a etapa atual ainda existe no funil
+        if (editingProject.value && projectForm.stepId) {
+          const stepExists = formStages.value.some(stage => stage.id === projectForm.stepId)
+          if (!stepExists && formStages.value.length > 0) {
+            // Se a etapa não existe mais, seleciona a primeira
+            projectForm.stepId = formStages.value[0].id
+            console.log('⚠️ Etapa anterior não existe, selecionando primeira:', projectForm.stepId)
+          } else {
+            console.log('✏️ Modo edição - mantendo etapa atual:', projectForm.stepId)
+          }
+        }
+
       } catch (error) {
         console.error('Erro ao carregar etapas para o formulário:', error)
       }
     }
 
     const saveProject = async () => {
+      if (!validateProjectForm()) {
+        return // Impede o salvamento se houver erros de validação
+      }
+
       try {
         if (projectForm.id) {
           await ProjectService.updateProject(projectForm.id, {
@@ -259,17 +465,22 @@ export default {
       }
     }
 
-    const editProject = (project) => {
+    const editProject = async (project) => {
       console.log('🎯 Projetos.vue - editProject recebeu:', project)
       editingProject.value = project
 
+      // Encontra o funil do projeto
       const currentFunnel = funnels.value.find(f => f.steps.some(s => s.id === project.stepId))
+
       if (currentFunnel) {
-        selectedFunilId.value = currentFunnel.id
+        console.log('📁 Funil encontrado:', currentFunnel.name)
         projectForm.funnelId = currentFunnel.id
-        updateStagesForForm()
+
+        // Carrega as etapas do funil ANTES de preencher o formulário
+        await updateStagesForForm()
       }
 
+      // Preenche o formulário
       Object.assign(projectForm, {
         id: project.id,
         name: project.name,
@@ -278,9 +489,13 @@ export default {
         description: project.description,
         startDate: project.startDate ? project.startDate.substring(0, 10) : '',
         endDate: project.endDate ? project.endDate.substring(0, 10) : '',
-        userId: project.userId || 1
+        userId: project.userId || 1,
+        isArchived: project.isArchived
       })
 
+      console.log('📝 Formulário preenchido:', projectForm)
+
+      // Abre o offcanvas
       const offcanvasElement = document.getElementById('offcanvasNovoProjeto')
       const offcanvasInstance = Offcanvas.getOrCreateInstance(offcanvasElement)
       offcanvasInstance.show()
@@ -310,13 +525,14 @@ export default {
         name: '',
         customer: '',
         funnelId: selectedFunilId.value,
-        stepId: formStages.value.length > 0 ? formStages.value[0].id : null,
+        stepId: null,
         description: '',
         startDate: '',
         endDate: '',
         userId: users.value.length > 0 ? users.value[0].id : 1
       })
       editingProject.value = null
+      projectErrors.value = {} // Limpa os erros ao resetar o formulário
     }
 
     const resetFormAndOpenOffcanvas = () => {
@@ -333,6 +549,35 @@ export default {
       }
     }
 
+    const projectToArchive = ref(null)
+
+    const openArchiveModal = (project) => {
+      projectToArchive.value = project
+      const modalEl = document.getElementById('confirmArchiveProjectModal')
+      const modal = new Modal(modalEl)
+      modal.show()
+    }
+
+    const confirmArchiveProject = async () => {
+      if (!projectToArchive.value) return
+
+      try {
+
+        await ProjectService.archiveProject(projectToArchive.value.id)
+        await loadProjetosByFunil()
+
+        // Fecha modal
+        const modalEl = document.getElementById('confirmArchiveProjectModal')
+        const modal = Modal.getInstance(modalEl)
+        modal.hide()
+
+        closeOffcanvas()
+        resetForm()
+      } catch (error) {
+        console.error('Erro ao (des)arquivar projeto:', error)
+      }
+    }
+
     onMounted(() => {
       loadFunnels()
       loadActiveUsers()
@@ -340,10 +585,12 @@ export default {
 
     return {
       selectedFunilId,
+      archivedFilter,
       funnels,
       users,
       editingProject,
       projectForm,
+      projectErrors, // Adicionado para exposição no template
       kanbanColumns,
       projects,
       formStages,
@@ -353,7 +600,17 @@ export default {
       archiveProject,
       resetFormAndOpenOffcanvas,
       editProject,
-      loadActiveUsers
+      loadActiveUsers,
+      hasLevelConfig,
+      updateStagesForForm,
+      projectToArchive,
+      openArchiveModal,
+      confirmArchiveProject,
+      validateProjectName, // Adicionado para validação inline
+      validateProjectCustomer, // Adicionado para validação inline
+      validateProjectFunnel, // Adicionado para validação inline
+      validateProjectStep, // Adicionado para validação inline
+      validateProjectDates // Adicionado para validação inline
     }
   }
 }

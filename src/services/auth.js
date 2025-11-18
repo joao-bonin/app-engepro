@@ -2,6 +2,10 @@ export function isAuthenticated() {
   return !!localStorage.getItem('token');
 }
 
+export function hasLevelConfig() {
+  return localStorage.getItem('hasLevelConfig');
+}
+
 export async function login(email, password) {
   if (email && password) {
 

@@ -4,39 +4,23 @@
       <h3>EngePro</h3>
     </div>
     <ul class="list-unstyled components">
-      <li>
-        <router-link 
-          to="/projetos" 
-          class="nav-link-custom" 
-          :class="{ active: $route.path === '/projetos' }"
-        >
+      <li >
+        <router-link to="/projetos" class="nav-link-custom" :class="{ active: $route.path === '/projetos' }">
           <i class="bi bi-kanban"></i>Gestão de Projetos
         </router-link>
       </li>
-      <li>
-        <router-link 
-          to="/funis-etapas" 
-          class="nav-link-custom"
-          :class="{ active: $route.path === '/funis-etapas' }"
-        >
+      <li >
+        <router-link to="/funis-etapas" class="nav-link-custom" :class="{ active: $route.path === '/funis-etapas' }">
           <i class="bi bi-diagram-3"></i>Gestão de Funis e Etapas
         </router-link>
       </li>
-      <li>
-        <router-link 
-          to="/usuarios" 
-          class="nav-link-custom"
-          :class="{ active: $route.path === '/usuarios' }"
-        >
+      <li v-if="canShow">
+        <router-link to="/usuarios" class="nav-link-custom" :class="{ active: $route.path === '/usuarios' }">
           <i class="bi bi-people"></i>Gestão de Usuários
         </router-link>
       </li>
-      <li>
-        <router-link 
-          to="/relatorios" 
-          class="nav-link-custom"
-          :class="{ active: $route.path === '/relatorios' }"
-        >
+      <li >
+        <router-link to="/relatorios" class="nav-link-custom" :class="{ active: $route.path === '/relatorios' }">
           <i class="bi bi-file-earmark-bar-graph"></i>Relatórios
         </router-link>
       </li>
@@ -46,19 +30,24 @@
 
 <script>
 import { ref, inject } from 'vue'
+import { hasLevelConfig } from '@/services/auth'
 
 export default {
   name: 'Sidebar',
   setup() {
-    // Usar provide/inject para compartilhar estado do sidebar
     const sidebarActive = inject('sidebarActive', ref(false))
-    
+
+    // Converter para booleano
+    const canShow = hasLevelConfig() === 'true'
+
     return {
-      sidebarActive
+      sidebarActive,
+      canShow
     }
   }
 }
 </script>
+
 
 <style scoped>
 .nav-link-custom {
@@ -87,4 +76,3 @@ export default {
   font-size: 1.1rem;
 }
 </style>
-

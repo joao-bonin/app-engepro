@@ -396,7 +396,6 @@ export default {
     }
 
 
-
     // #### Etapas
     const editingEtapa = ref(null)
     const etapaErrors = ref({})

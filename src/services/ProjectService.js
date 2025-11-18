@@ -41,8 +41,8 @@ const fetchApi = async (url, method = 'GET', data = null) => {
 const ProjectService = {
   // 1. Carregar Projetos por Funil (para o Kanban)
   // GET /project/funnel/{id}
-  getProjectsByFunnelId: async (funnelId) => {
-    return fetchApi(`${API_URL}/funnel/${funnelId}`);
+  getProjectsByFunnelId: async (funnelId, query) => {
+    return fetchApi(`${API_URL}/funnel/${funnelId}${query}`);
   },
 
   // 2. Criar Novo Projeto
@@ -81,9 +81,9 @@ const ProjectService = {
   },
 
   // 5. Arquivar Projeto (O delete do backend na verdade arquiva)
-  // DELETE /project/{id}
+  // PUT /project/archive/{id}
   archiveProject: async (projectId) => {
-    return fetchApi(`${API_URL}/${projectId}`, 'DELETE');
+    return fetchApi(`${API_URL}/${projectId}/archive`, 'PUT');
   }
 }
 
