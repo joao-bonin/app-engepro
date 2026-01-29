@@ -42,7 +42,7 @@
 
 
     <!-- Kanban Board -->
-    <KanbanBoard :columns="kanbanColumns" :projects="projects" @move-project="moveProject"
+    <KanbanBoard :columns="kanbanColumns" :projects="projects" :has-level-config="hasLevelConfig" @move-project="moveProject"
       @edit-project="editProject" />
 
     <!-- Offcanvas Novo/Editar Projeto -->
@@ -449,7 +449,7 @@ export default {
           endDate: project.endDate ? project.endDate.substring(0, 10) : '',
           userId: project.userId || 1,
           stepId: project.stepId,
-          isArchived: false
+          isArchived: project.isArchived
         }
 
         await ProjectService.moveProjectStage(projectId, newStepId, currentProjectData)

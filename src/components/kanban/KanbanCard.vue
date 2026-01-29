@@ -1,16 +1,22 @@
 <template>
-  <div 
+    <div 
     class="kanban-card"
-    draggable="true"
+    :draggable="hasLevelConfig"
     @dragstart="onDragStart"
-    @click="editProject"
+    @click="hasLevelConfig ? editProject() : null"
+    :style="{ cursor: hasLevelConfig ? 'grab' : 'default' }"
   >
+    <div class="status-badge-container">
+      <span :class="['status-badge', project.isArchived ? 'badge-archived' : 'badge-active']">
+        {{ project.isArchived ? 'Arquivado' : 'Ativo' }}
+      </span>
+    </div>
     <h5>{{ project.name }}</h5>
     <p>{{ project.customer }}</p>
     <p>{{ project.description }}</p>
     <div class="kanban-card-footer">
       <span>Prazo: {{ project.deadline }}</span>
-      <div class="card-actions">
+      <div v-if="hasLevelConfig" class="card-actions">
         <button 
           class="btn btn-sm btn-outline-primary"
           @click.stop="editProject"
@@ -30,6 +36,10 @@ export default {
     project: {
       type: Object,
       required: true
+    },
+    hasLevelConfig: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['dragstart', 'edit-project'],
@@ -80,6 +90,30 @@ export default {
 
 .kanban-card:active {
   cursor: grabbing;
+}
+
+.status-badge-container {
+  margin-bottom: 0.5rem;
+}
+
+.status-badge {
+  font-size: 0.65rem;
+  font-weight: bold;
+  padding: 0.15rem 0.4rem;
+  border-radius: 1rem;
+  text-transform: uppercase;
+}
+
+.badge-active {
+  background-color: #e7f1ff;
+  color: #0d6efd; /* Azul */
+  border: 1px solid #0d6efd;
+}
+
+.badge-archived {
+  background-color: #fff3cd;
+  color: #856404; /* Amarelo/Dourado */
+  border: 1px solid #856404;
 }
 
 .kanban-card h5 {

@@ -13,6 +13,7 @@
       v-for="project in projects"
       :key="project.id"
       :project="project"
+      :has-level-config="hasLevelConfig"
       @dragstart="onDragStart"
       @edit-project="onEditProject"
     />
@@ -39,6 +40,10 @@ export default {
     projects: {
       type: Array,
       required: true
+    },
+    hasLevelConfig: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['move-project', 'edit-project'],
@@ -60,6 +65,10 @@ export default {
     
     const onDrop = (event) => {
       event.preventDefault()
+      if (!props.hasLevelConfig) {
+        console.log('🚫 KanbanColumn - Drop bloqueado: Usuário sem permissão')
+        return
+      }
       console.log('🎪 KanbanColumn - onDrop chamado')
       
       try {

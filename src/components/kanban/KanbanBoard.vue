@@ -5,6 +5,7 @@
       :key="column.id"
       :column="column"
       :projects="getProjectsByStage(column.id)"
+      :has-level-config="hasLevelConfig"
       @move-project="$emit('move-project', $event.projectId, $event.newStage)"
       @edit-project="$emit('edit-project', $event)"
     />
@@ -27,6 +28,10 @@ export default {
     projects: {
       type: Array,
       required: true
+    },
+    hasLevelConfig: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['move-project', 'edit-project'],
