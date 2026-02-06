@@ -2,50 +2,9 @@
   <div class="relatorios-page">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2 class="page-title mb-0">Relatório de Desempenho</h2>
-      <div>
-        <button class="btn btn-outline-secondary me-2">
-          <i class="bi bi-printer me-2"></i>Imprimir
-        </button>
-        <button class="btn btn-primary-custom">
-          <i class="bi bi-download me-2"></i>Exportar PDF
-        </button>
-      </div>
-    </div>
-    
-    <!-- Filtros -->
-    <div class="report-filters">
-      <div class="row g-3">
-        <div class="col-md-3">
-          <label class="form-label">Período</label>
-          <select class="form-select" v-model="filters.periodo">
-            <option value="7">Últimos 7 dias</option>
-            <option value="30">Últimos 30 dias</option>
-            <option value="90">Últimos 90 dias</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Funil</label>
-          <select class="form-select" v-model="filters.funil">
-            <option value="">Todos os Funis</option>
-            <option value="construcao">Construção</option>
-            <option value="desenvolvimento">Desenvolvimento</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Status</label>
-          <select class="form-select" v-model="filters.status">
-            <option value="">Todos os Status</option>
-            <option value="ativo">Ativo</option>
-            <option value="concluido">Concluído</option>
-            <option value="atrasado">Atrasado</option>
-          </select>
-        </div>
-        <div class="col-md-3 d-flex align-items-end">
-          <button class="btn btn-primary-custom w-100" @click="applyFilters">
-            <i class="bi bi-filter me-2"></i>Aplicar Filtros
-          </button>
-        </div>
-      </div>
+      <button class="btn btn-primary-custom" @click="fetchReportData">
+        <i class="bi bi-arrow-clockwise me-2"></i>Atualizar Dados
+      </button>
     </div>
     
     <!-- Cards de Estatísticas -->
@@ -72,7 +31,7 @@
             <div class="d-flex justify-content-between">
               <div>
                 <div class="stat-value">{{ stats.projetosConcluidos }}</div>
-                <div class="stat-label">Projetos Concluídos</div>
+                <div class="stat-label">Concluídos</div>
               </div>
               <div class="stat-icon">
                 <i class="bi bi-check-circle"></i>
@@ -104,7 +63,7 @@
             <div class="d-flex justify-content-between">
               <div>
                 <div class="stat-value">{{ stats.projetosAtrasados }}</div>
-                <div class="stat-label">Projetos Atrasados</div>
+                <div class="stat-label">Atrasados</div>
               </div>
               <div class="stat-icon">
                 <i class="bi bi-exclamation-triangle"></i>
@@ -119,10 +78,10 @@
     <div class="row mb-4">
       <div class="col-md-8 mb-3">
         <div class="card card-custom h-100">
-          <div class="card-header card-header-custom">Projetos por Etapa</div>
+          <div class="card-header card-header-custom">Projetos por Funil</div>
           <div class="card-body">
             <div class="chart-container">
-              <canvas ref="projetosPorEtapaChart"></canvas>
+              <canvas ref="projetosPorFunilChart"></canvas>
             </div>
           </div>
         </div>
@@ -142,7 +101,7 @@
     
     <!-- Tabela de Projetos Recentes -->
     <div class="card card-custom mb-4">
-      <div class="card-header card-header-custom">Projetos Recentes</div>
+      <div class="card-header card-header-custom">Análise Detalhada de Projetos</div>
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-hover align-middle mb-0">
@@ -156,32 +115,32 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="projeto in projetosRecentes" :key="projeto.id">
-                <td>{{ projeto.nome }}</td>
-                <td>{{ projeto.etapa }}</td>
+              <tr v-for="projeto in projects" :key="projeto.id">
                 <td>
-                  <div class="progress" style="height: 20px;">
+                  <strong>{{ projeto.name }}</strong><br>
+                  <small class="text-muted">{{ projeto.customer }}</small>
+                </td>
+                <td>{{ projeto.stepName }}</td>
+                <td style="width: 200px;">
+                  <div class="progress" style="height: 10px;">
                     <div 
                       class="progress-bar" 
                       role="progressbar" 
-                      :style="{ width: projeto.progresso + '%' }"
-                      :aria-valuenow="projeto.progresso" 
-                      aria-valuemin="0" 
-                      aria-valuemax="100"
-                    >
-                      {{ projeto.progresso }}%
-                    </div>
+                      :style="{ width: projeto.progress + '%' }"
+                      :class="projeto.progress === 100 ? 'bg-success' : ''"
+                    ></div>
                   </div>
+                  <small>{{ projeto.progress }}%</small>
                 </td>
                 <td>
-                  <span 
-                    class="badge" 
-                    :class="getStatusClass(projeto.status)"
-                  >
+                  <span class="badge" :class="getStatusBadgeClass(projeto.status)">
                     {{ projeto.status }}
                   </span>
                 </td>
-                <td>{{ projeto.prazo }}</td>
+                <td>{{ formatDate(projeto.endDate) }}</td>
+              </tr>
+              <tr v-if="projects.length === 0">
+                <td colspan="5" class="text-center py-4">Nenhum dado disponível.</td>
               </tr>
             </tbody>
           </table>
@@ -197,97 +156,76 @@ import { ref, reactive, onMounted, nextTick } from 'vue'
 export default {
   name: 'Relatorios',
   setup() {
-    const projetosPorEtapaChart = ref(null)
+    const projetosPorFunilChart = ref(null)
     const statusDistribuicaoChart = ref(null)
-    
-    const filters = reactive({
-      periodo: '7',
-      funil: '',
-      status: ''
-    })
+    const projects = ref([])
     
     const stats = reactive({
-      totalProjetos: 24,
-      projetosConcluidos: 8,
-      projetosAndamento: 14,
-      projetosAtrasados: 2
+      totalProjetos: 0,
+      projetosConcluidos: 0,
+      projetosAndamento: 0,
+      projetosAtrasados: 0
     })
     
-    const projetosRecentes = ref([
-      {
-        id: 1,
-        nome: 'Residencial XYZ',
-        etapa: 'Execução',
-        progresso: 75,
-        status: 'Em dia',
-        prazo: '30/07/2025'
-      },
-      {
-        id: 2,
-        nome: 'Comercial ABC',
-        etapa: 'Planejamento',
-        progresso: 25,
-        status: 'Em dia',
-        prazo: '15/08/2025'
-      },
-      {
-        id: 3,
-        nome: 'Industrial DEF',
-        etapa: 'Fundação',
-        progresso: 50,
-        status: 'Atrasado',
-        prazo: '10/07/2025'
-      }
-    ])
-    
-    let chartProjetosEtapa = null
+    let chartProjetosFunil = null
     let chartStatusDistribuicao = null
-    
-    const getStatusClass = (status) => {
+
+    const getStatusBadgeClass = (status) => {
       switch (status) {
-        case 'Em dia':
-          return 'bg-success'
-        case 'Atrasado':
-          return 'bg-danger'
-        case 'Atenção':
-          return 'bg-warning'
-        case 'Concluído':
-          return 'bg-secondary'
-        default:
-          return 'bg-primary'
+        case 'Em dia': return 'bg-success'
+        case 'Atrasado': return 'bg-danger'
+        case 'Atenção': return 'bg-warning text-dark'
+        case 'Concluído': return 'bg-info'
+        case 'Arquivado': return 'bg-secondary'
+        default: return 'bg-primary'
+      }
+    }
+
+    const formatDate = (dateString) => {
+      if (!dateString) return 'N/A'
+      return new Date(dateString).toLocaleDateString('pt-BR')
+    }
+    
+    const fetchReportData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch('http://localhost:9000/report', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const data = await response.json()
+        projects.value = data.projects
+
+        // Calcular estatísticas baseadas nos novos status
+        stats.totalProjetos = data.projects.length
+        stats.projetosConcluidos = data.projects.filter(p => p.status === 'Concluído').length
+        stats.projetosAtrasados = data.projects.filter(p => p.status === 'Atrasado').length
+        stats.projetosAndamento = data.projects.filter(p => p.status === 'Em dia' || p.status === 'Atenção').length
+
+        loadCharts(data.projects)
+      } catch (error) {
+        console.error('Erro ao carregar relatório:', error)
       }
     }
     
-    const applyFilters = () => {
-      console.log('Aplicando filtros:', filters)
-      // Implementar lógica de filtros
-      loadCharts()
-    }
-    
-    const loadCharts = async () => {
+    const loadCharts = async (projectList) => {
       await nextTick()
-      
-      // Importar Chart.js dinamicamente
       const Chart = (await import('chart.js/auto')).default
       
-      // Destruir gráficos existentes
-      if (chartProjetosEtapa) {
-        chartProjetosEtapa.destroy()
-      }
-      if (chartStatusDistribuicao) {
-        chartStatusDistribuicao.destroy()
-      }
+      if (chartProjetosFunil) chartProjetosFunil.destroy()
+      if (chartStatusDistribuicao) chartStatusDistribuicao.destroy()
       
-      // Gráfico de Projetos por Etapa
-      if (projetosPorEtapaChart.value) {
-        const ctx1 = projetosPorEtapaChart.value.getContext('2d')
-        chartProjetosEtapa = new Chart(ctx1, {
+      // Dados para Projetos por Funil
+      const funnels = [...new Set(projectList.map(p => p.funnelName).filter(Boolean))]
+      const funnelCounts = funnels.map(f => projectList.filter(p => p.funnelName === f).length)
+
+      if (projetosPorFunilChart.value) {
+        chartProjetosFunil = new Chart(projetosPorFunilChart.value.getContext('2d'), {
           type: 'bar',
           data: {
-            labels: ['Planejamento', 'Fundação', 'Estrutura', 'Alvenaria', 'Acabamento'],
+            labels: funnels,
             datasets: [{
               label: 'Nº de Projetos',
-              data: [6, 4, 3, 5, 6],
+              data: funnelCounts,
               backgroundColor: 'rgba(52, 152, 219, 0.7)',
               borderColor: 'rgba(52, 152, 219, 1)',
               borderWidth: 1
@@ -296,37 +234,32 @@ export default {
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  precision: 0
-                }
-              }
-            },
-            plugins: {
-              legend: {
-                display: false
-              }
-            }
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+            plugins: { legend: { display: false } }
           }
         })
       }
       
-      // Gráfico de Distribuição por Status
+      // Dados para Distribuição por Status
+      const statusCounts = {
+        'Em dia': projectList.filter(p => p.status === 'Em dia').length,
+        'Atenção': projectList.filter(p => p.status === 'Atenção').length,
+        'Atrasado': projectList.filter(p => p.status === 'Atrasado').length,
+        'Concluído': projectList.filter(p => p.status === 'Concluído').length
+      }
+
       if (statusDistribuicaoChart.value) {
-        const ctx2 = statusDistribuicaoChart.value.getContext('2d')
-        chartStatusDistribuicao = new Chart(ctx2, {
+        chartStatusDistribuicao = new Chart(statusDistribuicaoChart.value.getContext('2d'), {
           type: 'doughnut',
           data: {
             labels: ['Em dia', 'Atenção', 'Atrasado', 'Concluído'],
             datasets: [{
-              data: [12, 2, 2, 8],
+              data: [statusCounts['Em dia'], statusCounts['Atenção'], statusCounts['Atrasado'], statusCounts['Concluído']],
               backgroundColor: [
                 'rgba(46, 204, 113, 0.7)',
                 'rgba(241, 196, 15, 0.7)',
                 'rgba(231, 76, 60, 0.7)',
-                'rgba(52, 73, 94, 0.7)'
+                'rgba(52, 152, 219, 0.7)'
               ],
               borderWidth: 2,
               borderColor: '#fff'
@@ -335,83 +268,35 @@ export default {
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                position: 'bottom'
-              }
-            }
+            plugins: { legend: { position: 'bottom' } }
           }
         })
       }
     }
     
-    onMounted(() => {
-      loadCharts()
-    })
+    onMounted(fetchReportData)
     
     return {
-      projetosPorEtapaChart,
+      projetosPorFunilChart,
       statusDistribuicaoChart,
-      filters,
       stats,
-      projetosRecentes,
-      getStatusClass,
-      applyFilters
+      projects,
+      getStatusBadgeClass,
+      formatDate,
+      fetchReportData
     }
   }
 }
 </script>
 
 <style scoped>
-.relatorios-page {
-  padding: 0;
-}
-
-.report-filters {
-  background-color: var(--light-bg);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.stat-card {
-  border-radius: 0.5rem;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  transition: transform 0.3s;
-}
-
-.stat-card:hover {
-  transform: translateY(-5px);
-}
-
-.stat-icon {
-  font-size: 2rem;
-  opacity: 0.8;
-}
-
-.stat-value {
-  font-size: 2rem;
-  font-weight: 700;
-}
-
-.stat-label {
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.chart-container {
-  position: relative;
-  height: 300px;
-  width: 100%;
-}
-
-.progress {
-  background-color: #e9ecef;
-}
-
-.progress-bar {
-  background-color: var(--accent-color);
-}
+.relatorios-page { padding: 0; }
+.stat-card { border-radius: 0.5rem; transition: transform 0.3s; }
+.stat-card:hover { transform: translateY(-5px); }
+.stat-icon { font-size: 2rem; opacity: 0.8; }
+.stat-value { font-size: 2rem; font-weight: 700; }
+.stat-label { font-size: 0.9rem; text-transform: uppercase; }
+.chart-container { position: relative; height: 300px; width: 100%; }
+.progress { background-color: #e9ecef; border-radius: 5px; }
+.progress-bar { background-color: #3498db; }
 </style>
-
