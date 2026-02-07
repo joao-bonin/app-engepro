@@ -6,17 +6,22 @@
     <ul class="list-unstyled components">
       <li >
         <router-link to="/projetos" class="nav-link-custom" :class="{ active: $route.path === '/projetos' }">
-          <i class="bi bi-kanban"></i>Gestão de Projetos
+          <i class="bi bi-kanban"></i>Projetos
         </router-link>
       </li>
       <li >
         <router-link to="/funis-etapas" class="nav-link-custom" :class="{ active: $route.path === '/funis-etapas' }">
-          <i class="bi bi-diagram-3"></i>Gestão de Funis e Etapas
+          <i class="bi bi-diagram-3"></i>Funis e Etapas
         </router-link>
       </li>
       <li v-if="canShow">
         <router-link to="/usuarios" class="nav-link-custom" :class="{ active: $route.path === '/usuarios' }">
-          <i class="bi bi-people"></i>Gestão de Usuários
+          <i class="bi bi-people"></i>Usuários
+        </router-link>
+      </li>
+      <li v-if="canShow">
+        <router-link to="/contatos" class="nav-link-custom" :class="{ active: $route.path === '/contatos' }">
+          <i class="bi bi-people"></i>Contatos
         </router-link>
       </li>
       <li >

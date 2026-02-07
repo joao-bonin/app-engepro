@@ -25,7 +25,6 @@
                 <th scope="col">Email</th>
                 <th scope="col">Telefone</th>
                 <th scope="col">CNPJ</th>
-                <th scope="col">Endereço</th>
                 <th scope="col">Ações</th>
               </tr>
             </thead>
@@ -35,7 +34,6 @@
                 <td>{{ contato.email }}</td>
                 <td>{{ contato.phone }}</td>
                 <td>{{ contato.cnpj }}</td>
-                <td>{{ formatAddress(contato.address) }}</td>
                 <td>
                   <button class="btn btn-sm btn-warning me-1" @click="editContato(contato)" title="Editar">
                     <i class="bi bi-pencil"></i>
@@ -381,20 +379,6 @@ export default {
       return Object.keys(contatoErrors.value).length === 0
     }
 
-    const formatAddress = (address) => {
-      if (!address) return '-'
-      const parts = [
-        address.street,
-        address.number ? `nº ${address.number}` : null,
-        address.quarter,
-        address.city,
-        address.state,
-        address.zipCode
-      ]
-
-      return parts.filter(Boolean).join(', ')
-    }
-
     const loadContacts = async () => {
       try {
         const data = await ContactService.getAllContacts()
@@ -532,7 +516,6 @@ export default {
       validatePhone,
       validateCnpj,
       validateAddressField,
-      formatAddress,
       loadContacts,
       editContato,
       saveContato,
