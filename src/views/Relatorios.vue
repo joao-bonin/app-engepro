@@ -113,7 +113,7 @@
     <div class="row mb-4">
       <div class="col-md-8 mb-3">
         <div class="card card-custom h-100">
-          <div class="card-header card-header-custom">Projetos por Funil</div>
+          <div class="card-header card-header-custom">Projetos por Etapas</div>
           <div class="card-body">
             <div class="chart-container">
               <canvas ref="projetosPorFunilChart"></canvas>
@@ -265,18 +265,18 @@ export default {
       if (chartProjetosFunil) chartProjetosFunil.destroy()
       if (chartStatusDistribuicao) chartStatusDistribuicao.destroy()
       
-      // Dados para Projetos por Funil
-      const funnels = [...new Set(projectList.map(p => p.funnelName).filter(Boolean))]
-      const funnelCounts = funnels.map(f => projectList.filter(p => p.funnelName === f).length)
+      // Dados para Projetos por Etapas
+      const steps = [...new Set(projectList.map(p => p.stepName).filter(Boolean))]
+      const stepCounts = steps.map(step => projectList.filter(p => p.stepName === step).length)
 
       if (projetosPorFunilChart.value) {
         chartProjetosFunil = new Chart(projetosPorFunilChart.value.getContext('2d'), {
           type: 'bar',
           data: {
-            labels: funnels,
+            labels: steps,
             datasets: [{
               label: 'Nº de Projetos',
-              data: funnelCounts,
+              data: stepCounts,
               backgroundColor: 'rgba(52, 152, 219, 0.7)',
               borderColor: 'rgba(52, 152, 219, 1)',
               borderWidth: 1
