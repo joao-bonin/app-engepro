@@ -195,6 +195,24 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal de Aviso de Exclusão Bloqueada -->
+    <div class="modal fade" id="deleteBlockedModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Não foi possível excluir</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            {{ deleteBlockedMessage }}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Entendi</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -211,6 +229,7 @@ export default {
     const selectedFunilId = ref(null)
     const funilErrors = ref({})
     const funilToDelete = ref(null)
+    const deleteBlockedMessage = ref('')
 
     const token = localStorage.getItem("token");
     const hasLevelConfig = ref(localStorage.getItem("hasLevelConfig") === "true")
@@ -296,6 +315,16 @@ export default {
         })
 
         if (!response.ok) throw new Error('Erro ao deletar funil')
+
+        const canDelete = await response.json()
+        if (canDelete === false) {
+          const modal = Modal.getOrCreateInstance(document.getElementById('confirmDeleteFunilModal'))
+          modal.hide()
+          deleteBlockedMessage.value = 'O funil não pode ser deletado, pois possui etapas vinculadas.'
+          const blockedModal = Modal.getOrCreateInstance(document.getElementById('deleteBlockedModal'))
+          blockedModal.show()
+          return
+        }
 
         const index = funis.value.findIndex(f => f.id === id)
         if (index !== -1) funis.value.splice(index, 1)
@@ -534,6 +563,16 @@ export default {
 
         if (!response.ok) throw new Error('Erro ao deletar etapa')
 
+        const canDelete = await response.json()
+        if (canDelete === false) {
+          const modal = Modal.getOrCreateInstance(document.getElementById('confirmDeleteEtapaModal'))
+          modal.hide()
+          deleteBlockedMessage.value = 'A etapa não pode ser deletada, pois possui projetos vinculados.'
+          const blockedModal = Modal.getOrCreateInstance(document.getElementById('deleteBlockedModal'))
+          blockedModal.show()
+          return
+        }
+
         await loadFunis()
 
         const modal = Modal.getOrCreateInstance(document.getElementById('confirmDeleteEtapaModal'))
@@ -571,6 +610,7 @@ export default {
       etapaErrors,
       funilToDelete,
       etapaToDelete,
+      deleteBlockedMessage,
       openDeleteFunilModal,
       openDeleteEtapaModal,
       confirmDeleteFunil,
