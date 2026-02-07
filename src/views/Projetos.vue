@@ -463,6 +463,7 @@ export default {
           endDate: project.endDate ? project.endDate.substring(0, 10) : '',
           userId: project.userId || 1,
           stepId: project.stepId,
+          contactId: project.contactId,
           isArchived: project.isArchived
         }
 
