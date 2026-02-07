@@ -6,6 +6,25 @@
         <i class="bi bi-arrow-clockwise me-2"></i>Atualizar Dados
       </button>
     </div>
+
+    <div class="report-filters">
+      <div class="row">
+        <div class="col-md-4">
+          <label for="selectReportFunnel" class="form-label"><strong>Funil:</strong></label>
+          <select
+            id="selectReportFunnel"
+            class="form-select"
+            v-model="selectedFunnelId"
+            @change="fetchReportData"
+          >
+            <option :value="null">Todos</option>
+            <option v-for="funil in funnels" :key="funil.id" :value="funil.id">
+              {{ funil.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
     
     <!-- Cards de Estatísticas -->
     <div class="row mb-4">
@@ -152,6 +171,7 @@
 
 <script>
 import { ref, reactive, onMounted, nextTick } from 'vue'
+import FunnelService from '../services/FunnelService'
 
 export default {
   name: 'Relatorios',
@@ -159,6 +179,8 @@ export default {
     const projetosPorFunilChart = ref(null)
     const statusDistribuicaoChart = ref(null)
     const projects = ref([])
+    const funnels = ref([])
+    const selectedFunnelId = ref(null)
     
     const stats = reactive({
       totalProjetos: 0,
@@ -185,11 +207,22 @@ export default {
       if (!dateString) return 'N/A'
       return new Date(dateString).toLocaleDateString('pt-BR')
     }
+
+    const loadFunnels = async () => {
+      try {
+        const data = await FunnelService.getAllFunnels()
+        funnels.value = data.filter(funnel => funnel.steps.length > 0)
+      } catch (error) {
+        console.error('Erro ao carregar funis:', error)
+      }
+    }
     
     const fetchReportData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch('http://localhost:9000/report', {
+        const url = new URL('http://localhost:9000/report')
+        url.searchParams.set('funnelId', selectedFunnelId.value ?? 'null')
+        const response = await fetch(url.toString(), {
           headers: { 'Authorization': `Bearer ${token}` }
         })
         const data = await response.json()
@@ -274,11 +307,16 @@ export default {
       }
     }
     
-    onMounted(fetchReportData)
+    onMounted(() => {
+      loadFunnels()
+      fetchReportData()
+    })
     
     return {
       projetosPorFunilChart,
       statusDistribuicaoChart,
+      funnels,
+      selectedFunnelId,
       stats,
       projects,
       getStatusBadgeClass,
