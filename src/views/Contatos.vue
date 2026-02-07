@@ -119,8 +119,10 @@
               class="form-control"
               :class="{ 'is-invalid': contatoErrors.cnpj }"
               v-model="contatoForm.cnpj"
+              inputmode="numeric"
+              placeholder="00.000.000/0000-00"
               @blur="validateCnpj"
-              @input="validateCnpj"
+              @input="handleCnpjInput"
             />
             <div class="invalid-feedback" v-if="contatoErrors.cnpj">
               {{ contatoErrors.cnpj }}
@@ -158,8 +160,9 @@
               class="form-control"
               :class="{ 'is-invalid': contatoErrors.number }"
               v-model="contatoForm.address.number"
+              inputmode="numeric"
               @blur="validateAddressField('number')"
-              @input="validateAddressField('number')"
+              @input="handleNumberInput"
             />
             <div class="invalid-feedback" v-if="contatoErrors.number">
               {{ contatoErrors.number }}
@@ -198,14 +201,18 @@
 
           <div class="mb-3">
             <label class="form-label">Estado</label>
-            <input
-              type="text"
+            <select
               class="form-control"
               :class="{ 'is-invalid': contatoErrors.state }"
               v-model="contatoForm.address.state"
               @blur="validateAddressField('state')"
               @input="validateAddressField('state')"
-            />
+            >
+              <option value="" disabled>Selecione o estado</option>
+              <option v-for="state in brazilianStates" :key="state.value" :value="state.value">
+                {{ state.label }}
+              </option>
+            </select>
             <div class="invalid-feedback" v-if="contatoErrors.state">
               {{ contatoErrors.state }}
             </div>
@@ -218,8 +225,10 @@
               class="form-control"
               :class="{ 'is-invalid': contatoErrors.zipCode }"
               v-model="contatoForm.address.zipCode"
-              @blur="validateAddressField('zipCode')"
-              @input="validateAddressField('zipCode')"
+              inputmode="numeric"
+              placeholder="00000-000"
+              @blur="handleCepBlur"
+              @input="handleCepInput"
             />
             <div class="invalid-feedback" v-if="contatoErrors.zipCode">
               {{ contatoErrors.zipCode }}
@@ -248,6 +257,35 @@ export default {
     const editingContato = ref(null)
     const contatos = ref([])
     const contatoErrors = ref({})
+    const brazilianStates = [
+      { value: 'AC', label: 'AC - Acre' },
+      { value: 'AL', label: 'AL - Alagoas' },
+      { value: 'AP', label: 'AP - Amapá' },
+      { value: 'AM', label: 'AM - Amazonas' },
+      { value: 'BA', label: 'BA - Bahia' },
+      { value: 'CE', label: 'CE - Ceará' },
+      { value: 'DF', label: 'DF - Distrito Federal' },
+      { value: 'ES', label: 'ES - Espírito Santo' },
+      { value: 'GO', label: 'GO - Goiás' },
+      { value: 'MA', label: 'MA - Maranhão' },
+      { value: 'MT', label: 'MT - Mato Grosso' },
+      { value: 'MS', label: 'MS - Mato Grosso do Sul' },
+      { value: 'MG', label: 'MG - Minas Gerais' },
+      { value: 'PA', label: 'PA - Pará' },
+      { value: 'PB', label: 'PB - Paraíba' },
+      { value: 'PR', label: 'PR - Paraná' },
+      { value: 'PE', label: 'PE - Pernambuco' },
+      { value: 'PI', label: 'PI - Piauí' },
+      { value: 'RJ', label: 'RJ - Rio de Janeiro' },
+      { value: 'RN', label: 'RN - Rio Grande do Norte' },
+      { value: 'RS', label: 'RS - Rio Grande do Sul' },
+      { value: 'RO', label: 'RO - Rondônia' },
+      { value: 'RR', label: 'RR - Roraima' },
+      { value: 'SC', label: 'SC - Santa Catarina' },
+      { value: 'SP', label: 'SP - São Paulo' },
+      { value: 'SE', label: 'SE - Sergipe' },
+      { value: 'TO', label: 'TO - Tocantins' }
+    ]
 
     const contatoForm = reactive({
       id: null,
@@ -297,7 +335,7 @@ export default {
     }
 
     const validateCnpj = () => {
-      const cnpjRegex = /^[0-9.\\/-]{14,18}$/
+      const cnpjRegex = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/
       if (!contatoForm.cnpj || contatoForm.cnpj.trim() === '') {
         contatoErrors.value.cnpj = 'O CNPJ é obrigatório.'
       } else if (!cnpjRegex.test(contatoForm.cnpj)) {
@@ -319,6 +357,16 @@ export default {
 
       if (!contatoForm.address[field] || contatoForm.address[field].trim() === '') {
         contatoErrors.value[field] = labels[field]
+        return
+      }
+
+      if (field === 'number' && !/^[0-9]+$/.test(contatoForm.address.number)) {
+        contatoErrors.value.number = 'O número deve conter apenas dígitos.'
+        return
+      }
+
+      if (field === 'zipCode' && !/^\d{5}-\d{3}$/.test(contatoForm.address.zipCode)) {
+        contatoErrors.value.zipCode = 'O CEP deve estar no formato 00000-000.'
       } else {
         delete contatoErrors.value[field]
       }
@@ -345,7 +393,7 @@ export default {
         contatoErrors.value.phone = 'O telefone deve ser válido.'
       }
 
-      const cnpjRegex = /^[0-9.\\/-]{14,18}$/
+      const cnpjRegex = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/
       if (!contatoForm.cnpj || contatoForm.cnpj.trim() === '') {
         contatoErrors.value.cnpj = 'O CNPJ é obrigatório.'
       } else if (!cnpjRegex.test(contatoForm.cnpj)) {
@@ -358,6 +406,8 @@ export default {
 
       if (!contatoForm.address.number || contatoForm.address.number.trim() === '') {
         contatoErrors.value.number = 'O número é obrigatório.'
+      } else if (!/^[0-9]+$/.test(contatoForm.address.number)) {
+        contatoErrors.value.number = 'O número deve conter apenas dígitos.'
       }
 
       if (!contatoForm.address.quarter || contatoForm.address.quarter.trim() === '') {
@@ -374,6 +424,8 @@ export default {
 
       if (!contatoForm.address.zipCode || contatoForm.address.zipCode.trim() === '') {
         contatoErrors.value.zipCode = 'O CEP é obrigatório.'
+      } else if (!/^\d{5}-\d{3}$/.test(contatoForm.address.zipCode)) {
+        contatoErrors.value.zipCode = 'O CEP deve estar no formato 00000-000.'
       }
 
       return Object.keys(contatoErrors.value).length === 0
@@ -399,15 +451,15 @@ export default {
         name: contato.name,
         email: contato.email,
         phone: contato.phone,
-        cnpj: contato.cnpj,
+        cnpj: contato.cnpj ? formatCnpj(contato.cnpj) : '',
         observations: contato.observations,
         address: {
           street: contato.address?.street || '',
-          number: contato.address?.number || '',
+          number: contato.address?.number ? String(contato.address.number) : '',
           city: contato.address?.city || '',
-          state: contato.address?.state || '',
+          state: contato.address?.state ? contato.address.state.toUpperCase() : '',
           quarter: contato.address?.quarter || '',
-          zipCode: contato.address?.zipCode || ''
+          zipCode: contato.address?.zipCode ? formatZipCode(contato.address.zipCode) : ''
         }
       })
 
@@ -490,6 +542,88 @@ export default {
       contatoErrors.value = {}
     }
 
+    const toDigits = (value) => value.replace(/\D+/g, '')
+
+    const formatCnpj = (value) => {
+      const digits = toDigits(value).slice(0, 14)
+      const parts = [
+        digits.slice(0, 2),
+        digits.slice(2, 5),
+        digits.slice(5, 8),
+        digits.slice(8, 12),
+        digits.slice(12, 14)
+      ].filter(Boolean)
+
+      if (parts.length <= 2) {
+        return parts.join('.')
+      }
+
+      if (parts.length === 3) {
+        return `${parts[0]}.${parts[1]}.${parts[2]}`
+      }
+
+      if (parts.length === 4) {
+        return `${parts[0]}.${parts[1]}.${parts[2]}/${parts[3]}`
+      }
+
+      return `${parts[0]}.${parts[1]}.${parts[2]}/${parts[3]}-${parts[4] || ''}`.replace(/-$/, '')
+    }
+
+    const formatZipCode = (value) => {
+      const digits = toDigits(value).slice(0, 8)
+      if (digits.length <= 5) {
+        return digits
+      }
+      return `${digits.slice(0, 5)}-${digits.slice(5)}`
+    }
+
+    const handleCnpjInput = (event) => {
+      contatoForm.cnpj = formatCnpj(event.target.value)
+      validateCnpj()
+    }
+
+    const handleNumberInput = (event) => {
+      const digits = toDigits(event.target.value)
+      contatoForm.address.number = digits
+      validateAddressField('number')
+    }
+
+    const handleCepInput = (event) => {
+      contatoForm.address.zipCode = formatZipCode(event.target.value)
+      validateAddressField('zipCode')
+    }
+
+    const handleCepBlur = async () => {
+      validateAddressField('zipCode')
+      if (contatoErrors.value.zipCode) {
+        return
+      }
+
+      const cepDigits = toDigits(contatoForm.address.zipCode)
+      if (cepDigits.length !== 8) {
+        return
+      }
+
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`)
+        if (!response.ok) {
+          throw new Error('Falha ao buscar CEP.')
+        }
+        const data = await response.json()
+        if (data.erro) {
+          contatoErrors.value.zipCode = 'CEP não encontrado.'
+          return
+        }
+
+        contatoForm.address.street = data.logradouro || contatoForm.address.street
+        contatoForm.address.quarter = data.bairro || contatoForm.address.quarter
+        contatoForm.address.city = data.localidade || contatoForm.address.city
+        contatoForm.address.state = data.uf || contatoForm.address.state
+      } catch (error) {
+        console.error('❌ Erro ao buscar CEP:', error)
+      }
+    }
+
     const resetFormAndOpenOffcanvas = () => {
       resetForm()
     }
@@ -511,11 +645,16 @@ export default {
       editingContato,
       contatoForm,
       contatoErrors,
+      brazilianStates,
       validateName,
       validateEmail,
       validatePhone,
       validateCnpj,
       validateAddressField,
+      handleCnpjInput,
+      handleNumberInput,
+      handleCepInput,
+      handleCepBlur,
       loadContacts,
       editContato,
       saveContato,
