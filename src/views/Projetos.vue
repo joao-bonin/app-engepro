@@ -65,14 +65,14 @@
               {{ projectErrors.name }}
             </div>
           </div>
-          <!-- Cliente -->
+          <!-- Contato -->
           <div class="mb-3">
-            <label class="form-label">Cliente</label>
-            <input type="text" class="form-control" :class="{ 'is-invalid': projectErrors.customer }"
-              v-model="projectForm.customer" @blur="validateProjectCustomer" @input="validateProjectCustomer">
-            <div class="invalid-feedback" v-if="projectErrors.customer">
-              {{ projectErrors.customer }}
-            </div>
+            <label class="form-label">Contato</label>
+            <select class="form-select" v-model="projectForm.contactId">
+              <option v-for="contact in contacts" :key="contact.id" :value="contact.id">
+                {{ contact.name }}
+              </option>
+            </select>
           </div>
           <!-- Responsavel -->
           <div class="mb-3">
@@ -200,6 +200,7 @@ import KanbanBoard from '../components/kanban/KanbanBoard.vue'
 import ProjectService from '../services/ProjectService'
 import FunnelService from '../services/FunnelService'
 import UserService from '../services/UserService'
+import ContactService from '../services/ContactService'
 import { Modal, Offcanvas } from 'bootstrap'
 
 
@@ -216,6 +217,7 @@ export default {
     const users = ref([])
     const kanbanColumns = ref([])
     const projects = ref([])
+    const contacts = ref([])
 
     const hasLevelConfig = ref(localStorage.getItem("hasLevelConfig") === "true")
 
@@ -226,7 +228,7 @@ export default {
     const projectForm = reactive({
       id: null,
       name: '',
-      customer: '',
+      contactId: null,
       funnelId: null,
       stepId: null,
       description: '',
@@ -244,9 +246,9 @@ export default {
       }
     }
 
-    const validateProjectCustomer = () => {
-      if (!projectForm.customer || projectForm.customer.trim() === "") {
-        projectErrors.value.customer = "O nome do cliente é obrigatório."
+    const validateProjectContact = () => {
+      if (!projectForm.contactId) {
+        projectErrors.value.contactId = "O contato é obrigatório."
       } else {
         delete projectErrors.value.customer
       }
@@ -293,7 +295,7 @@ export default {
       projectErrors.value = {} // Limpa todos os erros antes de validar
 
       validateProjectName()
-      validateProjectCustomer()
+      validateProjectContact()
       validateProjectFunnel()
       validateProjectStep()
       validateProjectDates()
@@ -326,6 +328,18 @@ export default {
         }
       } catch (error) {
         console.error('Erro ao carregar os responsáveis:', error)
+      }
+    }
+
+    const loadContacts = async () => {
+      try {
+        const data = await ContactService.getAllContacts()
+        contacts.value = data
+        if (data.length > 0) {
+          projectForm.contactId = data[0].id
+        }
+      } catch (error) {
+        console.error('Erro ao carregar os contatos:', error)
       }
     }
 
@@ -523,7 +537,7 @@ export default {
       Object.assign(projectForm, {
         id: null,
         name: '',
-        customer: '',
+        contactId: contacts.value.length > 0 ? contacts.value[0].id : null,
         funnelId: selectedFunilId.value,
         stepId: null,
         description: '',
@@ -581,6 +595,7 @@ export default {
     onMounted(() => {
       loadFunnels()
       loadActiveUsers()
+      loadContacts()
     })
 
     return {
@@ -588,6 +603,7 @@ export default {
       archivedFilter,
       funnels,
       users,
+      contacts,
       editingProject,
       projectForm,
       projectErrors, // Adicionado para exposição no template
@@ -607,7 +623,7 @@ export default {
       openArchiveModal,
       confirmArchiveProject,
       validateProjectName, // Adicionado para validação inline
-      validateProjectCustomer, // Adicionado para validação inline
+      validateProjectContact, // Adicionado para validação inline
       validateProjectFunnel, // Adicionado para validação inline
       validateProjectStep, // Adicionado para validação inline
       validateProjectDates // Adicionado para validação inline
