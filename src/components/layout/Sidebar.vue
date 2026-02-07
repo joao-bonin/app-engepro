@@ -16,7 +16,7 @@
       </li>
       <li v-if="canShow">
         <router-link to="/usuarios" class="nav-link-custom" :class="{ active: $route.path === '/usuarios' }">
-          <i class="bi bi-people"></i>Usuários
+          <i class="bi bi-person-badge"></i>Usuários
         </router-link>
       </li>
       <li v-if="canShow">

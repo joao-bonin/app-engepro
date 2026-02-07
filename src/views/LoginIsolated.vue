@@ -24,7 +24,7 @@
         </button>
       </form>
 
-      <p class="login-footer">© 2025 EngePro</p>
+      <p class="login-footer">© 2026 EngePro</p>
     </div>
   </div>
 </template>

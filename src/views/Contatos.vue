@@ -105,7 +105,9 @@
               :class="{ 'is-invalid': contatoErrors.phone }"
               v-model="contatoForm.phone"
               @blur="validatePhone"
-              @input="validatePhone"
+              @input="handlePhoneInput"
+              inputmode="numeric"
+              placeholder="(00) 00000-0000"
             />
             <div class="invalid-feedback" v-if="contatoErrors.phone">
               {{ contatoErrors.phone }}
@@ -450,7 +452,7 @@ export default {
         id: contato.id,
         name: contato.name,
         email: contato.email,
-        phone: contato.phone,
+        phone: contato.phone ? formatPhone(contato.phone) : '',
         cnpj: contato.cnpj ? formatCnpj(contato.cnpj) : '',
         observations: contato.observations,
         address: {
@@ -569,6 +571,19 @@ export default {
       return `${parts[0]}.${parts[1]}.${parts[2]}/${parts[3]}-${parts[4] || ''}`.replace(/-$/, '')
     }
 
+    const formatPhone = (value) => {
+      const digits = toDigits(value)
+      if (digits.length <= 2) {
+        return `(${digits}`
+      } else if (digits.length <= 7) {
+        return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+      } else if (digits.length <= 11) {
+        return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+      } else {
+        return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`
+      }
+    }
+
     const formatZipCode = (value) => {
       const digits = toDigits(value).slice(0, 8)
       if (digits.length <= 5) {
@@ -581,6 +596,11 @@ export default {
       contatoForm.cnpj = formatCnpj(event.target.value)
       validateCnpj()
     }
+
+    const handlePhoneInput = (event) => {
+      contatoForm.phone = formatPhone(event.target.value)
+      validatePhone()
+    } 
 
     const handleNumberInput = (event) => {
       const digits = toDigits(event.target.value)
@@ -652,6 +672,7 @@ export default {
       validateCnpj,
       validateAddressField,
       handleCnpjInput,
+      handlePhoneInput,
       handleNumberInput,
       handleCepInput,
       handleCepBlur,
