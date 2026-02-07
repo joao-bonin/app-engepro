@@ -25,7 +25,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Cards de Estatísticas -->
     <div class="row mb-4">
       <div class="col-md-3 mb-3">
@@ -86,6 +86,22 @@
               </div>
               <div class="stat-icon">
                 <i class="bi bi-exclamation-triangle"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3 mb-3">
+        <div class="card stat-card h-100 bg-secondary text-white">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div>
+                <div class="stat-value">{{ stats.projetosArquivados }}</div>
+                <div class="stat-label">Arquivados</div>
+              </div>
+              <div class="stat-icon">
+                <i class="bi bi-archive"></i>
               </div>
             </div>
           </div>
@@ -186,7 +202,8 @@ export default {
       totalProjetos: 0,
       projetosConcluidos: 0,
       projetosAndamento: 0,
-      projetosAtrasados: 0
+      projetosAtrasados: 0,
+      projetosArquivados: 0
     })
     
     let chartProjetosFunil = null
@@ -216,7 +233,7 @@ export default {
         console.error('Erro ao carregar funis:', error)
       }
     }
-    
+
     const fetchReportData = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -233,6 +250,7 @@ export default {
         stats.projetosConcluidos = data.projects.filter(p => p.status === 'Concluído').length
         stats.projetosAtrasados = data.projects.filter(p => p.status === 'Atrasado').length
         stats.projetosAndamento = data.projects.filter(p => p.status === 'Em dia' || p.status === 'Atenção').length
+        stats.projetosArquivados = data.projects.filter(p => p.status === 'Arquivado').length
 
         loadCharts(data.projects)
       } catch (error) {
@@ -278,21 +296,29 @@ export default {
         'Em dia': projectList.filter(p => p.status === 'Em dia').length,
         'Atenção': projectList.filter(p => p.status === 'Atenção').length,
         'Atrasado': projectList.filter(p => p.status === 'Atrasado').length,
-        'Concluído': projectList.filter(p => p.status === 'Concluído').length
+        'Concluído': projectList.filter(p => p.status === 'Concluído').length,
+        'Arquivado': projectList.filter(p => p.status === 'Arquivado').length
       }
 
       if (statusDistribuicaoChart.value) {
         chartStatusDistribuicao = new Chart(statusDistribuicaoChart.value.getContext('2d'), {
           type: 'doughnut',
           data: {
-            labels: ['Em dia', 'Atenção', 'Atrasado', 'Concluído'],
+            labels: ['Em dia', 'Atenção', 'Atrasado', 'Concluído', 'Arquivado'],
             datasets: [{
-              data: [statusCounts['Em dia'], statusCounts['Atenção'], statusCounts['Atrasado'], statusCounts['Concluído']],
+              data: [
+                statusCounts['Em dia'],
+                statusCounts['Atenção'],
+                statusCounts['Atrasado'],
+                statusCounts['Concluído'],
+                statusCounts['Arquivado']
+              ],
               backgroundColor: [
                 'rgba(46, 204, 113, 0.7)',
                 'rgba(241, 196, 15, 0.7)',
                 'rgba(231, 76, 60, 0.7)',
-                'rgba(52, 152, 219, 0.7)'
+                'rgba(52, 152, 219, 0.7)',
+                'rgba(149, 165, 166, 0.7)'
               ],
               borderWidth: 2,
               borderColor: '#fff'
