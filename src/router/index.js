@@ -12,6 +12,7 @@ const Layout = () => import('@/components/layout/Layout.vue')
 const Projetos = () => import('@/views/Projetos.vue')
 const FunisEtapas = () => import('@/views/FunisEtapas.vue')
 const Usuarios = () => import('@/views/Usuarios.vue')
+const Contatos = () => import('@/views/Contatos.vue')
 const Relatorios = () => import('@/views/Relatorios.vue')
 
 const router = createRouter({
@@ -28,6 +29,7 @@ const router = createRouter({
       children: [
         { path: 'projetos', name: 'Projetos', component: Projetos },
         { path: 'funis-etapas', name: 'FunisEtapas', component: FunisEtapas },
+        { path: 'contatos', name: 'Contatos', component: Contatos },
         { path: 'usuarios', name: 'Usuarios', component: Usuarios },
         { path: '', name: 'Relatorios', component: Relatorios }
       ]
