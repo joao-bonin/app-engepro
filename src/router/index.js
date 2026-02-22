@@ -1,6 +1,6 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-import { isAuthenticated } from '@/services/auth'
+import { isAuthenticated, hasLevelConfig } from '@/services/auth'
 
 // Login fora do layout
 import LoginIsolated from '@/views/LoginIsolated.vue'
@@ -30,7 +30,7 @@ const router = createRouter({
         { path: 'projetos', name: 'Projetos', component: Projetos },
         { path: 'funis-etapas', name: 'FunisEtapas', component: FunisEtapas },
         { path: 'contatos', name: 'Contatos', component: Contatos },
-        { path: 'usuarios', name: 'Usuarios', component: Usuarios },
+        { path: 'usuarios', name: 'Usuarios', component: Usuarios, meta: { requiresAdmin: true } },
         { path: '', name: 'Relatorios', component: Relatorios }
       ]
     },
@@ -42,15 +42,25 @@ const router = createRouter({
 
 // Guarda de rota: exige login nas rotas com meta.requiresAuth
 router.beforeEach((to, from, next) => {
-  // const logged = isAuthenticated();
   const logged = isAuthenticated();
+  const admin = hasLevelConfig() === 'true';
+
   if (to.matched.some(r => r.meta.requiresAuth) && !logged) {
     next({ path: '/login' });
-  } else if (to.path === '/login' && logged) {
-    next({ path: '/' });
-  } else {
-    next();
+    return;
   }
+
+  if (to.matched.some(r => r.meta.requiresAdmin) && !admin) {
+    next({ path: '/' });
+    return;
+  }
+
+  if (to.path === '/login' && logged) {
+    next({ path: '/' });
+    return;
+  }
+
+  next();
 });
 
 

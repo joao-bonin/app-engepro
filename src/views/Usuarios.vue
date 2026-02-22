@@ -255,6 +255,25 @@
             </div>
           </div>
 
+          <div class="mb-3" v-if="!usuarioForm.hasLevelConfig">
+            <label class="form-label">Funis Permitidos</label>
+            <select
+              class="form-select"
+              :class="{ 'is-invalid': usuarioErrors.funnelIds }"
+              v-model="usuarioForm.funnelIds"
+              @change="validateFunnels"
+              multiple
+            >
+              <option v-for="funnel in funnels" :key="funnel.id" :value="funnel.id">
+                {{ funnel.name }}
+              </option>
+            </select>
+            <div class="invalid-feedback" v-if="usuarioErrors.funnelIds">
+              {{ usuarioErrors.funnelIds }}
+            </div>
+            <small class="text-muted">Selecione um ou mais funis para usuários de acesso básico.</small>
+          </div>
+
           <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary d-flex align-items-center">
               {{ editingUsuario ? 'Salvar Alterações' : 'Salvar Usuário' }}
@@ -278,6 +297,7 @@
 <script>
 import { ref, reactive, onMounted, computed } from 'vue'
 import UserService from '../services/UserService'
+import FunnelService from '../services/FunnelService'
 import { Offcanvas, Modal } from 'bootstrap'
 
 export default {
@@ -288,6 +308,7 @@ export default {
     const changePassword = ref(false) // Controla se vai alterar a senha na edição
     const statusFilter = ref('all') // 'all' ou 'active'
     const usuarios = ref([])
+    const funnels = ref([])
     const usuarioErrors = ref({}) // Objeto para armazenar erros
     
     const usuarioForm = reactive({
@@ -297,8 +318,14 @@ export default {
       password: '',
       confirmarSenha: '',
       hasLevelConfig: false,
+      funnelIds: [],
       active: true
     })
+
+    const getUserFunnelIds = (user) => {
+      if (!user || user.hasLevelConfig) return []
+      return user.funnelIds || user.allowedFunnels?.map((funnel) => funnel.id) || []
+    }
 
     // Funções de Validação Inline (apenas para o campo específico)
     const validateName = () => {
@@ -350,6 +377,21 @@ export default {
       } else {
         delete usuarioErrors.value.hasLevelConfig
       }
+
+      if (usuarioForm.hasLevelConfig) {
+        usuarioForm.funnelIds = []
+        delete usuarioErrors.value.funnelIds
+      } else {
+        validateFunnels()
+      }
+    }
+
+    const validateFunnels = () => {
+      if (!usuarioForm.hasLevelConfig && usuarioForm.funnelIds.length === 0) {
+        usuarioErrors.value.funnelIds = 'Selecione ao menos um funil para usuários de acesso básico.'
+      } else {
+        delete usuarioErrors.value.funnelIds
+      }
     }
 
     // Função de Validação Completa (chamada apenas no saveUsuario)
@@ -400,6 +442,11 @@ export default {
         usuarioErrors.value.hasLevelConfig = "O nível de acesso é obrigatório."
       }
 
+      // 5. Funis permitidos para acesso básico
+      if (!usuarioForm.hasLevelConfig && usuarioForm.funnelIds.length === 0) {
+        usuarioErrors.value.funnelIds = 'Selecione ao menos um funil para usuários de acesso básico.'
+      }
+
       return Object.keys(usuarioErrors.value).length === 0
     }
 
@@ -423,6 +470,16 @@ export default {
       }
     }
 
+    const loadFunnels = async () => {
+      try {
+        const data = await FunnelService.getAllFunnels()
+        funnels.value = Array.isArray(data) ? data : []
+      } catch (error) {
+        console.error('❌ Erro ao carregar funis:', error)
+        funnels.value = []
+      }
+    }
+
     // Editar usuário
     const editUsuario = (usuario) => {
       console.log('✏️ Editando usuário:', usuario)
@@ -436,6 +493,7 @@ export default {
         password: '',
         confirmarSenha: '',
         hasLevelConfig: usuario.hasLevelConfig,
+        funnelIds: getUserFunnelIds(usuario),
         active: usuario.active
       })
 
@@ -446,7 +504,10 @@ export default {
 
     // Abrir modal de confirmação (da tabela)
     const openToggleUserModal = (usuario) => {
-      userToToggle.value = usuario
+      userToToggle.value = {
+        ...usuario,
+        funnelIds: getUserFunnelIds(usuario)
+      }
       const modal = new Modal(document.getElementById('confirmToggleUserModal'))
       modal.show()
     }
@@ -461,7 +522,8 @@ export default {
         name: usuarioForm.name,
         email: usuarioForm.email,
         active: usuarioForm.active,
-        hasLevelConfig: usuarioForm.hasLevelConfig
+        hasLevelConfig: usuarioForm.hasLevelConfig,
+        funnelIds: usuarioForm.hasLevelConfig ? [] : usuarioForm.funnelIds
       }
       
       const modal = new Modal(document.getElementById('confirmToggleUserModal'))
@@ -480,6 +542,7 @@ export default {
           name: userToToggle.value.name,
           email: userToToggle.value.email,
           hasLevelConfig: userToToggle.value.hasLevelConfig,
+          funnelIds: userToToggle.value.hasLevelConfig ? [] : (userToToggle.value.funnelIds || []),
           active: !userToToggle.value.active
         }
 
@@ -522,6 +585,7 @@ export default {
             name: usuarioForm.name,
             email: usuarioForm.email,
             hasLevelConfig: usuarioForm.hasLevelConfig,
+            funnelIds: usuarioForm.hasLevelConfig ? [] : usuarioForm.funnelIds,
             active: usuarioForm.active
           }
 
@@ -538,7 +602,8 @@ export default {
             name: usuarioForm.name,
             email: usuarioForm.email,
             password: usuarioForm.password,
-            hasLevelConfig: usuarioForm.hasLevelConfig
+            hasLevelConfig: usuarioForm.hasLevelConfig,
+            funnelIds: usuarioForm.hasLevelConfig ? [] : usuarioForm.funnelIds
           }
 
           await UserService.createUser(newUserData)
@@ -576,6 +641,7 @@ export default {
         password: '',
         confirmarSenha: '',
         hasLevelConfig: false,
+        funnelIds: [],
         active: true
       })
       editingUsuario.value = null
@@ -599,10 +665,12 @@ export default {
 
     onMounted(() => {
       loadUsers()
+      loadFunnels()
     })
 
     return {
       usuarios,
+      funnels,
       filteredUsers,
       statusFilter,
       editingUsuario,
@@ -620,7 +688,8 @@ export default {
       validateName, // Expor funções de validação para o template
       validateEmail,
       validatePasswordGroup,
-      validateAccessLevel
+      validateAccessLevel,
+      validateFunnels
     }
   }
 }
