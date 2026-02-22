@@ -326,15 +326,33 @@ export default {
     }
 
     const validatePhone = () => {
-      const phoneRegex = /^[0-9()+\\s-]{8,20}$/
-      if (!contatoForm.phone || contatoForm.phone.trim() === '') {
+      const rawPhone = contatoForm.phone?.trim()
+
+      if (!rawPhone) {
         contatoErrors.value.phone = 'O telefone é obrigatório.'
-      } else if (!phoneRegex.test(contatoForm.phone)) {
-        contatoErrors.value.phone = 'O telefone deve ser válido.'
+        return
+      }
+
+      // remove tudo que não for número
+      const onlyNumbers = rawPhone.replace(/\D/g, '')
+
+      console.log(rawPhone)
+console.log(onlyNumbers)
+
+      console.log('Somente números:', onlyNumbers)
+
+      // DDD (2) + 9 + 8 números = 11 dígitos
+      if (onlyNumbers.length !== 11) {
+        contatoErrors.value.phone = 'O telefone deve conter DDD + número (11 dígitos).'
+      } else if (onlyNumbers[2] !== '9') {
+        contatoErrors.value.phone = 'Celular deve iniciar com 9.'
       } else {
         delete contatoErrors.value.phone
       }
     }
+
+
+
 
     const validateCnpj = () => {
       const cnpjRegex = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/
@@ -388,12 +406,7 @@ export default {
         contatoErrors.value.email = 'O email deve ser válido.'
       }
 
-      const phoneRegex = /^[0-9()+\\s-]{8,20}$/
-      if (!contatoForm.phone || contatoForm.phone.trim() === '') {
-        contatoErrors.value.phone = 'O telefone é obrigatório.'
-      } else if (!phoneRegex.test(contatoForm.phone)) {
-        contatoErrors.value.phone = 'O telefone deve ser válido.'
-      }
+      validatePhone()
 
       const cnpjRegex = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/
       if (!contatoForm.cnpj || contatoForm.cnpj.trim() === '') {

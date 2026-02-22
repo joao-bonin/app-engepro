@@ -228,7 +228,7 @@ export default {
     const loadFunnels = async () => {
       try {
         const data = await FunnelService.getAllFunnels()
-        funnels.value = data.filter(funnel => funnel.steps.length > 0)
+        funnels.value = data.filter(funnel => funnel.steps && funnel.steps.length > 0)
       } catch (error) {
         console.error('Erro ao carregar funis:', error)
       }
@@ -243,7 +243,7 @@ export default {
           headers: { 'Authorization': `Bearer ${token}` }
         })
         const data = await response.json()
-        projects.value = data.projects
+        projects.value = Array.isArray(data.projects) ? data.projects : []
 
         // Calcular estatísticas baseadas nos novos status
         stats.totalProjetos = data.projects.length
