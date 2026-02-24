@@ -238,8 +238,8 @@ export default {
       try {
         const token = localStorage.getItem("token");
         const url = new URL('http://localhost:9000/report')
-        if(selectedFunnelId.value ){
-        url.searchParams.set('funnelId', selectedFunnelId.value)
+        if(selectedFunnelId.value){
+          url.searchParams.set('funnelId', selectedFunnelId.value)
         }
         const response = await fetch(url.toString(), {
           headers: { 'Authorization': `Bearer ${token}` }
