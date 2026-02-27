@@ -2,14 +2,23 @@
   <div class="projects-page">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
       <h2 class="page-title mb-0">Listagem de Projetos</h2>
-      <div class="search-wrapper">
-        <i class="bi bi-search"></i>
-        <input
-          v-model="searchTerm"
-          type="text"
-          class="form-control"
-          placeholder="Buscar por nome do projeto"
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <button
+          class="btn btn-primary d-flex align-items-center"
+          type="button"
+          @click="openNewProject"
         >
+          <i class="bi bi-plus-circle me-2"></i>Novo Projeto
+        </button>
+        <div class="search-wrapper">
+          <i class="bi bi-search"></i>
+          <input
+            v-model="searchTerm"
+            type="text"
+            class="form-control"
+            placeholder="Buscar por nome do projeto"
+          >
+        </div>
       </div>
     </div>
 
@@ -116,12 +125,24 @@ export default {
       })
     }
 
-    onMounted(loadProjects)
+    const openNewProject = () => {
+      router.push({
+        name: 'Projetos',
+        query: {
+          openNewProject: '1'
+        }
+      })
+    }
+
+    onMounted(() => {
+      loadProjects()
+    })
 
     return {
       errorMessage,
       filteredProjects,
       isLoading,
+      openNewProject,
       openQuickEdit,
       searchTerm
     }
