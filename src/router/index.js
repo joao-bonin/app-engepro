@@ -14,6 +14,7 @@ const FunisEtapas = () => import('@/views/FunisEtapas.vue')
 const Usuarios = () => import('@/views/Usuarios.vue')
 const Contatos = () => import('@/views/Contatos.vue')
 const Relatorios = () => import('@/views/Relatorios.vue')
+const Projects = () => import('@/views/Projects.vue')
 
 const router = createRouter({
   history: createWebHistory('/'),
@@ -31,7 +32,8 @@ const router = createRouter({
         { path: 'funis-etapas', name: 'FunisEtapas', component: FunisEtapas },
         { path: 'contatos', name: 'Contatos', component: Contatos },
         { path: 'usuarios', name: 'Usuarios', component: Usuarios, meta: { requiresAdmin: true } },
-        { path: '', name: 'Relatorios', component: Relatorios }
+        { path: '', name: 'Relatorios', component: Relatorios },
+        { path: 'projects', name: 'Projects', component: Projects }
       ]
     },
 

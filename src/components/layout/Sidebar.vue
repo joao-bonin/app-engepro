@@ -4,29 +4,34 @@
       <h3>EngePro</h3>
     </div>
     <ul class="list-unstyled components">
-      <li >
-        <router-link to="/projetos" class="nav-link-custom" :class="{ active: $route.path === '/projetos' }">
-          <i class="bi bi-kanban"></i>Projetos
+      <li>
+        <router-link to="/relatorios" class="nav-link-custom" :class="{ active: $route.path === '/relatorios' }">
+          <i class="bi bi-file-earmark-bar-graph"></i>Dashboard
         </router-link>
       </li>
-      <li >
+      <li>
+        <router-link to="/projetos" class="nav-link-custom" :class="{ active: $route.path === '/projetos' }">
+          <i class="bi bi-kanban"></i>Kanban
+        </router-link>
+      </li>
+      <li>
         <router-link to="/funis-etapas" class="nav-link-custom" :class="{ active: $route.path === '/funis-etapas' }">
-          <i class="bi bi-diagram-3"></i>Funis e Etapas
+          <i class="bi bi-diagram-3"></i>Gestão de Kanban
+        </router-link>
+      </li>
+      <li>
+        <router-link to="/projects" class="nav-link-custom" :class="{ active: $route.path === '/projects' }">
+          <i class="bi bi-folder"></i>Projetos
+        </router-link>
+      </li>
+      <li v-if="canShow">
+        <router-link to="/contatos" class="nav-link-custom" :class="{ active: $route.path === '/contatos' }">
+          <i class="bi bi-people"></i>Clientes
         </router-link>
       </li>
       <li v-if="canShow">
         <router-link to="/usuarios" class="nav-link-custom" :class="{ active: $route.path === '/usuarios' }">
           <i class="bi bi-person-badge"></i>Usuários
-        </router-link>
-      </li>
-      <li v-if="canShow">
-        <router-link to="/contatos" class="nav-link-custom" :class="{ active: $route.path === '/contatos' }">
-          <i class="bi bi-people"></i>Contatos
-        </router-link>
-      </li>
-      <li >
-        <router-link to="/relatorios" class="nav-link-custom" :class="{ active: $route.path === '/relatorios' }">
-          <i class="bi bi-file-earmark-bar-graph"></i>Relatórios
         </router-link>
       </li>
     </ul>

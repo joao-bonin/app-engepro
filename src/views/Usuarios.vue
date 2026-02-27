@@ -75,7 +75,7 @@
                     class="badge badge-status" 
                     :class="usuario.hasLevelConfig ? 'badge-admin' : 'badge-user'"
                   >
-                    {{ usuario.hasLevelConfig ? 'Configurador' : 'Acesso Básico' }}
+                    {{ usuario.hasLevelConfig ? 'Interno' : 'Externo' }}
                   </span>
                 </td>
                 <td>
@@ -247,8 +247,8 @@
               v-model="usuarioForm.hasLevelConfig"
               @change="validateAccessLevel"
             >
-              <option :value="true">Configurador</option>
-              <option :value="false">Acesso Básico</option>
+              <option :value="true">Interno</option>
+              <option :value="false">Externo</option>
             </select>
             <div class="invalid-feedback" v-if="usuarioErrors.hasLevelConfig">
               {{ usuarioErrors.hasLevelConfig }}

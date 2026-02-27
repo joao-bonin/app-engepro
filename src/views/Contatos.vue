@@ -1,20 +1,14 @@
 <template>
   <div class="contatos-page">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="page-title mb-0">Gestão de Contatos</h2>
-      <button
-        class="btn btn-primary d-flex align-items-center"
-        type="button"
-        data-bs-toggle="offcanvas"
-        data-bs-target="#offcanvasNovoContato"
-        aria-controls="offcanvasNovoContato"
-        @click="resetFormAndOpenOffcanvas"
-      >
-        <i class="bi bi-person-plus me-2"></i>Novo Contato
+      <h2 class="page-title mb-0">Gestão de Clientes</h2>
+      <button class="btn btn-primary d-flex align-items-center" type="button" data-bs-toggle="offcanvas"
+        data-bs-target="#offcanvasNovoContato" aria-controls="offcanvasNovoContato" @click="resetFormAndOpenOffcanvas">
+        <i class="bi bi-person-plus me-2"></i>Novo Cliente
       </button>
     </div>
 
-    <!-- Tabela de Contatos -->
+    <!-- Tabela de Clientes -->
     <div class="card-custom">
       <div class="card-body p-0">
         <div class="table-responsive">
@@ -52,13 +46,8 @@
     </div>
 
     <!-- Offcanvas Novo/Editar Contato -->
-    <div
-      class="offcanvas offcanvas-end offcanvas-custom"
-      tabindex="-1"
-      id="offcanvasNovoContato"
-      aria-labelledby="offcanvasNovoContatoLabel"
-      style="width: 500px;"
-    >
+    <div class="offcanvas offcanvas-end offcanvas-custom" tabindex="-1" id="offcanvasNovoContato"
+      aria-labelledby="offcanvasNovoContatoLabel" style="width: 500px;">
       <div class="offcanvas-header">
         <h5 class="offcanvas-title" id="offcanvasNovoContatoLabel">
           {{ editingContato ? 'Editar Contato' : 'Cadastrar Novo Contato' }}
@@ -69,14 +58,8 @@
         <form @submit.prevent="saveContato" novalidate>
           <div class="mb-3">
             <label class="form-label">Nome Completo</label>
-            <input
-              type="text"
-              class="form-control"
-              :class="{ 'is-invalid': contatoErrors.name }"
-              v-model="contatoForm.name"
-              @blur="validateName"
-              @input="validateName"
-            />
+            <input type="text" class="form-control" :class="{ 'is-invalid': contatoErrors.name }"
+              v-model="contatoForm.name" @blur="validateName" @input="validateName" />
             <div class="invalid-feedback" v-if="contatoErrors.name">
               {{ contatoErrors.name }}
             </div>
@@ -84,14 +67,8 @@
 
           <div class="mb-3">
             <label class="form-label">Email</label>
-            <input
-              type="email"
-              class="form-control"
-              :class="{ 'is-invalid': contatoErrors.email }"
-              v-model="contatoForm.email"
-              @blur="validateEmail"
-              @input="validateEmail"
-            />
+            <input type="email" class="form-control" :class="{ 'is-invalid': contatoErrors.email }"
+              v-model="contatoForm.email" @blur="validateEmail" @input="validateEmail" />
             <div class="invalid-feedback" v-if="contatoErrors.email">
               {{ contatoErrors.email }}
             </div>
@@ -99,16 +76,9 @@
 
           <div class="mb-3">
             <label class="form-label">Telefone</label>
-            <input
-              type="tel"
-              class="form-control"
-              :class="{ 'is-invalid': contatoErrors.phone }"
-              v-model="contatoForm.phone"
-              @blur="validatePhone"
-              @input="handlePhoneInput"
-              inputmode="numeric"
-              placeholder="(00) 00000-0000"
-            />
+            <input type="tel" class="form-control" :class="{ 'is-invalid': contatoErrors.phone }"
+              v-model="contatoForm.phone" @blur="validatePhone" @input="handlePhoneInput" inputmode="numeric"
+              placeholder="(00) 00000-0000" />
             <div class="invalid-feedback" v-if="contatoErrors.phone">
               {{ contatoErrors.phone }}
             </div>
@@ -116,16 +86,9 @@
 
           <div class="mb-3">
             <label class="form-label">CNPJ</label>
-            <input
-              type="text"
-              class="form-control"
-              :class="{ 'is-invalid': contatoErrors.cnpj }"
-              v-model="contatoForm.cnpj"
-              inputmode="numeric"
-              placeholder="00.000.000/0000-00"
-              @blur="validateCnpj"
-              @input="handleCnpjInput"
-            />
+            <input type="text" class="form-control" :class="{ 'is-invalid': contatoErrors.cnpj }"
+              v-model="contatoForm.cnpj" inputmode="numeric" placeholder="00.000.000/0000-00" @blur="validateCnpj"
+              @input="handleCnpjInput" />
             <div class="invalid-feedback" v-if="contatoErrors.cnpj">
               {{ contatoErrors.cnpj }}
             </div>
@@ -141,15 +104,20 @@
           <h6 class="mb-3">Endereço</h6>
 
           <div class="mb-3">
+            <label class="form-label">CEP</label>
+            <input type="text" class="form-control" :class="{ 'is-invalid': contatoErrors.zipCode }"
+              v-model="contatoForm.address.zipCode" inputmode="numeric" placeholder="00000-000" @blur="handleCepBlur"
+              @input="handleCepInput" />
+            <div class="invalid-feedback" v-if="contatoErrors.zipCode">
+              {{ contatoErrors.zipCode }}
+            </div>
+          </div>
+
+          <div class="mb-3">
             <label class="form-label">Logradouro</label>
-            <input
-              type="text"
-              class="form-control"
-              :class="{ 'is-invalid': contatoErrors.street }"
-              v-model="contatoForm.address.street"
-              @blur="validateAddressField('street')"
-              @input="validateAddressField('street')"
-            />
+            <input type="text" class="form-control" :class="{ 'is-invalid': contatoErrors.street }"
+              v-model="contatoForm.address.street" @blur="validateAddressField('street')"
+              @input="validateAddressField('street')" />
             <div class="invalid-feedback" v-if="contatoErrors.street">
               {{ contatoErrors.street }}
             </div>
@@ -157,15 +125,9 @@
 
           <div class="mb-3">
             <label class="form-label">Número</label>
-            <input
-              type="text"
-              class="form-control"
-              :class="{ 'is-invalid': contatoErrors.number }"
-              v-model="contatoForm.address.number"
-              inputmode="numeric"
-              @blur="validateAddressField('number')"
-              @input="handleNumberInput"
-            />
+            <input type="text" class="form-control" :class="{ 'is-invalid': contatoErrors.number }"
+              v-model="contatoForm.address.number" inputmode="numeric" @blur="validateAddressField('number')"
+              @input="handleNumberInput" />
             <div class="invalid-feedback" v-if="contatoErrors.number">
               {{ contatoErrors.number }}
             </div>
@@ -173,14 +135,9 @@
 
           <div class="mb-3">
             <label class="form-label">Bairro</label>
-            <input
-              type="text"
-              class="form-control"
-              :class="{ 'is-invalid': contatoErrors.quarter }"
-              v-model="contatoForm.address.quarter"
-              @blur="validateAddressField('quarter')"
-              @input="validateAddressField('quarter')"
-            />
+            <input type="text" class="form-control" :class="{ 'is-invalid': contatoErrors.quarter }"
+              v-model="contatoForm.address.quarter" @blur="validateAddressField('quarter')"
+              @input="validateAddressField('quarter')" />
             <div class="invalid-feedback" v-if="contatoErrors.quarter">
               {{ contatoErrors.quarter }}
             </div>
@@ -188,14 +145,9 @@
 
           <div class="mb-3">
             <label class="form-label">Cidade</label>
-            <input
-              type="text"
-              class="form-control"
-              :class="{ 'is-invalid': contatoErrors.city }"
-              v-model="contatoForm.address.city"
-              @blur="validateAddressField('city')"
-              @input="validateAddressField('city')"
-            />
+            <input type="text" class="form-control" :class="{ 'is-invalid': contatoErrors.city }"
+              v-model="contatoForm.address.city" @blur="validateAddressField('city')"
+              @input="validateAddressField('city')" />
             <div class="invalid-feedback" v-if="contatoErrors.city">
               {{ contatoErrors.city }}
             </div>
@@ -203,13 +155,9 @@
 
           <div class="mb-3">
             <label class="form-label">Estado</label>
-            <select
-              class="form-control"
-              :class="{ 'is-invalid': contatoErrors.state }"
-              v-model="contatoForm.address.state"
-              @blur="validateAddressField('state')"
-              @input="validateAddressField('state')"
-            >
+            <select class="form-control" :class="{ 'is-invalid': contatoErrors.state }"
+              v-model="contatoForm.address.state" @blur="validateAddressField('state')"
+              @input="validateAddressField('state')">
               <option value="" disabled>Selecione o estado</option>
               <option v-for="state in brazilianStates" :key="state.value" :value="state.value">
                 {{ state.label }}
@@ -217,23 +165,6 @@
             </select>
             <div class="invalid-feedback" v-if="contatoErrors.state">
               {{ contatoErrors.state }}
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">CEP</label>
-            <input
-              type="text"
-              class="form-control"
-              :class="{ 'is-invalid': contatoErrors.zipCode }"
-              v-model="contatoForm.address.zipCode"
-              inputmode="numeric"
-              placeholder="00000-000"
-              @blur="handleCepBlur"
-              @input="handleCepInput"
-            />
-            <div class="invalid-feedback" v-if="contatoErrors.zipCode">
-              {{ contatoErrors.zipCode }}
             </div>
           </div>
 
@@ -337,7 +268,7 @@ export default {
       const onlyNumbers = rawPhone.replace(/\D/g, '')
 
       console.log(rawPhone)
-console.log(onlyNumbers)
+      console.log(onlyNumbers)
 
       console.log('Somente números:', onlyNumbers)
 
@@ -613,7 +544,7 @@ console.log(onlyNumbers)
     const handlePhoneInput = (event) => {
       contatoForm.phone = formatPhone(event.target.value)
       validatePhone()
-    } 
+    }
 
     const handleNumberInput = (event) => {
       const digits = toDigits(event.target.value)
