@@ -195,12 +195,13 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import KanbanBoard from '../components/kanban/KanbanBoard.vue'
 import ProjectService from '../services/ProjectService'
 import FunnelService from '../services/FunnelService'
 import UserService from '../services/UserService'
 import ContactService from '../services/ContactService'
+import { useRoute, useRouter } from 'vue-router'
 import { Modal, Offcanvas } from 'bootstrap'
 
 
@@ -210,6 +211,9 @@ export default {
     KanbanBoard
   },
   setup() {
+    const route = useRoute()
+    const router = useRouter()
+
     // Dados do Kanban
     const selectedFunilId = ref(null)
     const archivedFilter = ref('active') // 'active', 'archived', 'all'
@@ -593,10 +597,38 @@ export default {
       }
     }
 
-    onMounted(() => {
-      loadFunnels()
-      loadActiveUsers()
-      loadContacts()
+
+    const openProjectOffcanvas = async () => {
+      await nextTick()
+      const offcanvasElement = document.getElementById('offcanvasNovoProjeto')
+      const offcanvasInstance = Offcanvas.getOrCreateInstance(offcanvasElement)
+      offcanvasInstance.show()
+    }
+
+    const handleRouteQueryActions = async () => {
+      if (route.query.openNewProject === '1') {
+        resetFormAndOpenOffcanvas()
+        await openProjectOffcanvas()
+        router.replace({ query: { ...route.query, openNewProject: undefined } })
+        return
+      }
+
+      if (route.query.editProjectId) {
+        const projectId = Number(route.query.editProjectId)
+        const projectToEdit = projects.value.find((project) => project.id === projectId)
+
+        if (projectToEdit) {
+          await editProject(projectToEdit)
+        }
+
+        router.replace({ query: { ...route.query, editProjectId: undefined } })
+      }
+    }
+    onMounted(async () => {
+      await loadFunnels()
+      await loadActiveUsers()
+      await loadContacts()
+      await handleRouteQueryActions()
     })
 
     return {
