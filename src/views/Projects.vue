@@ -1,16 +1,10 @@
 <template>
   <div class="projects-page">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
       <h2 class="page-title mb-0">Listagem de Projetos</h2>
-      <div class="d-flex flex-wrap align-items-center gap-2">
-        <button
-          class="btn btn-primary d-flex align-items-center"
-          type="button"
-          @click="openNewProject"
-        >
-          <i class="bi bi-plus-circle me-2"></i>Novo Projeto
-        </button>
+      <div class="d-flex flex-wrap align-items-end gap-2 w-100 w-md-auto justify-content-md-end">
         <div class="search-wrapper">
+          <label class="form-label fw-semibold mb-1">Buscar projeto</label>
           <i class="bi bi-search"></i>
           <input
             v-model="searchTerm"
@@ -19,6 +13,13 @@
             placeholder="Buscar por nome do projeto"
           >
         </div>
+        <button
+          class="btn btn-primary d-flex align-items-center action-new-project"
+          type="button"
+          @click="openNewProject"
+        >
+          <i class="bi bi-plus-circle me-2"></i>Novo Projeto
+        </button>
       </div>
     </div>
 
@@ -102,12 +103,33 @@ export default {
       return projects.value.filter((project) => (project.name || '').toLowerCase().includes(normalizedSearch))
     })
 
+    const normalizeProjectsResponse = (response) => {
+      if (Array.isArray(response)) {
+        return response
+      }
+
+      if (Array.isArray(response?.content)) {
+        return response.content
+      }
+
+      if (Array.isArray(response?.projects)) {
+        return response.projects
+      }
+
+      if (Array.isArray(response?.data)) {
+        return response.data
+      }
+
+      return []
+    }
+
     const loadProjects = async () => {
       isLoading.value = true
       errorMessage.value = ''
 
       try {
-        projects.value = await ProjectService.getAllProjects()
+        const response = await ProjectService.getAllProjects()
+        projects.value = normalizeProjectsResponse(response)
       } catch (error) {
         errorMessage.value = 'Não foi possível carregar os projetos. Tente novamente em instantes.'
         console.error(error)
@@ -153,7 +175,12 @@ export default {
 <style scoped>
 .search-wrapper {
   position: relative;
-  width: min(100%, 350px);
+  width: min(100%, 320px);
+}
+
+.action-new-project {
+  height: fit-content;
+  margin-bottom: 0.1rem;
 }
 
 .search-wrapper .bi-search {
