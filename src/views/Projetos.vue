@@ -3,13 +3,13 @@
   <div class="projetos-page">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2 class="page-title mb-0">Projetos</h2>
-      <div v-if="hasLevelConfig">
+     <!-- <div v-if="hasLevelConfig">
         <button v-if="funnels.length !== 0" class="btn btn-primary d-flex align-items-center" type="button"
           data-bs-toggle="offcanvas" data-bs-target="#offcanvasNovoProjeto" aria-controls="offcanvasNovoProjeto"
           @click="resetFormAndOpenOffcanvas">
           <i class="bi bi-plus-circle me-2"></i>Novo Projeto
         </button>
-      </div>
+      </div> -->
     </div>
 
     <!-- Seletor de Funil + Filtro de Projetos Arquivados -->

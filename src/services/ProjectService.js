@@ -43,7 +43,7 @@ const ProjectService = {
   // 0. Listar todos os projetos
   // GET /project
   getAllProjects: async () => {
-    return fetchApi(API_URL);
+    return fetchApi(`${API_URL}/info`);
   },
 
   // 1. Carregar Projetos por Funil (para o Kanban)

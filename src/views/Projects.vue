@@ -2,26 +2,23 @@
   <div class="projects-page">
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
       <h2 class="page-title mb-0">Listagem de Projetos</h2>
-      <div class="d-flex flex-wrap align-items-end gap-2 w-100 w-md-auto justify-content-md-end">
-        <div class="search-wrapper">
-          <label class="form-label fw-semibold mb-1">Buscar projeto</label>
-          <i class="bi bi-search"></i>
-          <input
-            v-model="searchTerm"
-            type="text"
-            class="form-control"
-            placeholder="Buscar por nome do projeto"
-          >
-        </div>
-        <button
-          class="btn btn-primary d-flex align-items-center action-new-project"
-          type="button"
-          @click="openNewProject"
-        >
+      <div>
+        <button class="btn btn-primary d-flex align-items-center action-new-project" type="button"
+          @click="openNewProject">
           <i class="bi bi-plus-circle me-2"></i>Novo Projeto
         </button>
       </div>
     </div>
+
+    <div class="row mb-3">
+      <div class="col-md-3">
+          <div class="search-wrapper">
+            <i class="bi bi-search"></i>
+            <input v-model="searchTerm" type="text" class="form-control" placeholder="Buscar por nome do projeto">
+          </div>
+      </div>
+    </div>
+
 
     <div class="card-custom">
       <div class="card-body p-0">
@@ -38,6 +35,7 @@
                 <th scope="col">Projeto</th>
                 <th scope="col">Funil</th>
                 <th scope="col">Etapa</th>
+                <th scope="col">Cliente</th>
                 <th scope="col">Responsável</th>
                 <th scope="col">Status</th>
                 <th scope="col" class="text-end">Ações</th>
@@ -48,6 +46,7 @@
                 <td>{{ project.name || 'Sem nome' }}</td>
                 <td>{{ project.funnelName || '-' }}</td>
                 <td>{{ project.stepName || '-' }}</td>
+                <td>{{ project.customerName || '-' }}</td>
                 <td>{{ project.userName || '-' }}</td>
                 <td>
                   <span class="badge" :class="project.isArchived ? 'bg-secondary' : 'bg-success'">
@@ -55,12 +54,8 @@
                   </span>
                 </td>
                 <td class="text-end">
-                  <button
-                    class="btn btn-sm btn-warning"
-                    type="button"
-                    title="Editar projeto"
-                    @click="openQuickEdit(project)"
-                  >
+                  <button class="btn btn-sm btn-warning" type="button" title="Editar projeto"
+                    @click="openQuickEdit(project)">
                     <i class="bi bi-pencil"></i>
                   </button>
                 </td>
@@ -89,8 +84,8 @@
         <form @submit.prevent="saveProject">
           <div class="mb-3">
             <label class="form-label">Nome do Projeto</label>
-            <input type="text" class="form-control" :class="{ 'is-invalid': projectErrors.name }" v-model="projectForm.name"
-              @blur="validateProjectName" @input="validateProjectName">
+            <input type="text" class="form-control" :class="{ 'is-invalid': projectErrors.name }"
+              v-model="projectForm.name" @blur="validateProjectName" @input="validateProjectName">
             <div class="invalid-feedback" v-if="projectErrors.name">
               {{ projectErrors.name }}
             </div>
@@ -98,8 +93,8 @@
 
           <div class="mb-3">
             <label class="form-label">Contato</label>
-            <select class="form-select" :class="{ 'is-invalid': projectErrors.contactId }" v-model="projectForm.contactId"
-              @change="validateProjectContact">
+            <select class="form-select" :class="{ 'is-invalid': projectErrors.contactId }"
+              v-model="projectForm.contactId" @change="validateProjectContact">
               <option v-for="contact in contacts" :key="contact.id" :value="contact.id">
                 {{ contact.name }}
               </option>
