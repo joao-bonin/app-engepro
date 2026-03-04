@@ -195,7 +195,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, nextTick, watch } from 'vue'
 import KanbanBoard from '../components/kanban/KanbanBoard.vue'
 import ProjectService from '../services/ProjectService'
 import FunnelService from '../services/FunnelService'
@@ -605,23 +605,60 @@ export default {
       offcanvasInstance.show()
     }
 
+    const clearQueryParam = async (paramName) => {
+      const nextQuery = { ...route.query }
+      delete nextQuery[paramName]
+      await router.replace({ query: nextQuery })
+    }
+
+    const findProjectForEdit = async (projectId) => {
+      let projectToEdit = projects.value.find((project) => project.id === projectId)
+
+      if (projectToEdit) {
+        return projectToEdit
+      }
+
+      const allProjects = await ProjectService.getAllProjects()
+      const normalizedProjects = Array.isArray(allProjects)
+        ? allProjects
+        : allProjects?.content || allProjects?.projects || allProjects?.data || []
+
+      projectToEdit = normalizedProjects.find((project) => project.id === projectId)
+
+      if (!projectToEdit?.stepId) {
+        return projectToEdit
+      }
+
+      const projectFunnel = funnels.value.find((funnel) => funnel.steps.some((step) => step.id === projectToEdit.stepId))
+
+      if (!projectFunnel) {
+        return projectToEdit
+      }
+
+      selectedFunilId.value = projectFunnel.id
+      archivedFilter.value = 'all'
+      await loadProjetosByFunil()
+
+      return projects.value.find((project) => project.id === projectId) || projectToEdit
+    }
+
     const handleRouteQueryActions = async () => {
       if (route.query.openNewProject === '1') {
         resetFormAndOpenOffcanvas()
         await openProjectOffcanvas()
-        router.replace({ query: { ...route.query, openNewProject: undefined } })
+        await clearQueryParam('openNewProject')
         return
       }
 
       if (route.query.editProjectId) {
         const projectId = Number(route.query.editProjectId)
-        const projectToEdit = projects.value.find((project) => project.id === projectId)
+        const projectToEdit = await findProjectForEdit(projectId)
 
         if (projectToEdit) {
           await editProject(projectToEdit)
         }
 
-        router.replace({ query: { ...route.query, editProjectId: undefined } })
+        await clearQueryParam('editProjectId')
       }
     }
     onMounted(async () => {
@@ -630,6 +667,13 @@ export default {
       await loadContacts()
       await handleRouteQueryActions()
     })
+
+    watch(
+      () => route.query,
+      async () => {
+        await handleRouteQueryActions()
+      }
+    )
 
     return {
       selectedFunilId,
