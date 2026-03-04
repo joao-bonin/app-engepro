@@ -48,6 +48,11 @@ const UserService = {
         return fetchApi(`${API_URL}/active`);
     },
 
+    // Listar usuários internos
+    getAllInternal: async () => {
+        return fetchApi(`${API_URL}/internal`);
+    },
+
     // Criar novo usuário
     createUser: async (userData) => {
         return fetchApi(API_URL, 'POST', userData);

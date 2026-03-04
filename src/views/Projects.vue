@@ -366,7 +366,7 @@ export default {
       try {
         const [funnelResponse, usersResponse, contactsResponse] = await Promise.all([
           FunnelService.getAllFunnels(),
-          UserService.getAllActive(),
+          UserService.getAllInternal(),
           ContactService.getAllContacts()
         ])
 
@@ -430,7 +430,15 @@ export default {
     const openQuickEdit = async (project) => {
       resetProjectForm()
       editingProjectId.value = project.id
-      await fillProjectForm(project)
+
+      try {
+        const projectDetails = await ProjectService.getProjectById(project.id)
+        await fillProjectForm(projectDetails)
+      } catch (error) {
+        console.error('Não foi possível carregar detalhes do projeto para edição:', error)
+        await fillProjectForm(project)
+      }
+
       openProjectOffcanvas()
     }
 
