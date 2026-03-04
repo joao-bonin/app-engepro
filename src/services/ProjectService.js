@@ -52,6 +52,13 @@ const ProjectService = {
     return fetchApi(`${API_URL}/funnel/${funnelId}${query}`);
   },
 
+
+  // 1.1 Carregar Projeto por ID
+  // GET /project/{id}
+  getProjectById: async (projectId) => {
+    return fetchApi(`${API_URL}/${projectId}`);
+  },
+
   // 2. Criar Novo Projeto
   // POST /project
   createProject: async (projectData) => {

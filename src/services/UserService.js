@@ -48,7 +48,7 @@ const UserService = {
         return fetchApi(`${API_URL}/active`);
     },
 
-    // Listar apenas usuários internos
+    // Listar usuários internos
     getAllInternal: async () => {
         return fetchApi(`${API_URL}/internal`);
     },
