@@ -19,7 +19,7 @@
           <i class="bi bi-diagram-3"></i>Gestão de Kanban
         </router-link>
       </li>
-      <li>
+      <li v-if="canShow">
         <router-link to="/projects" class="nav-link-custom" :class="{ active: $route.path === '/projects' }">
           <i class="bi bi-folder"></i>Projetos
         </router-link>
