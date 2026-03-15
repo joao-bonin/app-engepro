@@ -2,7 +2,7 @@
 
   <div class="projetos-page">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="page-title mb-0">Projetos</h2>
+      <h2 class="page-title mb-0">Kanban</h2>
      <!-- <div v-if="hasLevelConfig">
         <button v-if="funnels.length !== 0" class="btn btn-primary d-flex align-items-center" type="button"
           data-bs-toggle="offcanvas" data-bs-target="#offcanvasNovoProjeto" aria-controls="offcanvasNovoProjeto"
@@ -37,7 +37,7 @@
 
 
     <div v-if="funnels.length === 0" class="alert alert-info">
-      Adicione um funil com etapas para começar a gerenciar seus projetos!
+      Adicione um funil com etapas e projetos para começar a gerenciar o seu kanban!
     </div>
 
 

@@ -1,7 +1,7 @@
 <template>
   <div class="funis-etapas-page">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="page-title mb-0">Gestão de Funis e Etapas</h2>
+      <h2 class="page-title mb-0">Gestão de Kanban (Funis e Etapas)</h2>
       <button v-if="hasLevelConfig" class="btn btn-primary d-flex align-items-center" @click="openNewFunilModal">
         <i class="bi bi-plus-circle me-2"></i>Novo Funil
       </button>
